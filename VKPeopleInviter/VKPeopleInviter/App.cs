@@ -32,20 +32,43 @@ namespace VKPeopleInviter
             get
             {
                 return new Action(() => {
-                    NavPage.Navigation.PopModalAsync();
-
+					//Current.MainPage.Navigation.PopModalAsync();
                     if (IsLoggedIn)
-                    {
-                        //NavPage.Navigation.InsertPageBefore(new TodoListPage(), NavPage.Navigation.NavigationStack.First());
-                        //NavPage.Navigation.PopToRootAsync();
-                    }
+					{
+						//NavPage.PopToRootAsync();
+						//Current.MainPage.Navigation.RemovePage(NavPage.Navigation.NavigationStack.First());
+						Current.MainPage.Navigation.PushModalAsync(new ItemsSelectorPage());
+						//Current.MainPage.Navigation.InsertPageBefore(new ItemsSelectorPage(), NavPage.Navigation.NavigationStack.First());
+						//Current.MainPage.Navigation.PopToRootAsync();
+						//NavPage.CurrentPage = new ItemsSelectorPage()
+						//NavPage.PushAsync(new ItemsSelectorPage());
+						//NavPage.Navigation.InsertPageBefore(new ItemsSelectorPage(), NavPage.Navigation.NavigationStack.First());
+						//NavPage.Navigation.PushAsync(new ItemsSelectorPage());
+
+						//NavPage.Navigation.PushAsync(new LoginPage());
+						//NavPage.Navigation.PopToRootAsync();
+						//NavPage.Navigation.PushAsync(new ItemsSelectorPage()
+					}
                 });
             }
         }
 
+
+		public async static void MoveToItemsSelectionPage() 
+		{
+			await NavPage.CurrentPage.Navigation.PopModalAsync();
+			       
+			await NavPage.PushAsync(new ItemsSelectorPage());
+			//await Current.MainPage.Navigation.PopModalAsync();
+			//NavPage.Navigation.InsertPageBefore(new ItemsSelectorPage(), Current.MainPage.Navigation.NavigationStack.First());
+			//await NavPage.PopToRootAsync();
+			//await NavPage.PushAsync(new ItemsSelectorPage());
+			//NavPage.PushAsync(new ItemsSelectorPage());//NaNavigation.PushAsync(new ItemsSelectorPage());
+		}
+
         public App()
         {
-            User = new User();
+			User = new User();
 
             NavPage = new NavigationPage(new LoginPage());
             MainPage = NavPage;

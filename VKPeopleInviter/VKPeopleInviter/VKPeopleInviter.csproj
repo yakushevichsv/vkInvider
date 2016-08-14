@@ -44,6 +44,9 @@
     <Compile Include="Views\AuthenticationPage.xaml.cs" />
     <Compile Include="Views\LoginPage.xaml.cs" />
     <Compile Include="VKManager.cs" />
+    <Compile Include="Views\ItemsSelectorPage.xaml.cs">
+      <DependentUpon>ItemsSelectorPage.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="ModernDev.InTouch, Version=1.0.14.0, Culture=neutral, processorArchitecture=MSIL">
@@ -88,6 +91,9 @@
     <EmbeddedResource Include="Views\LoginPage.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\ItemsSelectorPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
