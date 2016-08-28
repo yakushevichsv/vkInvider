@@ -77,6 +77,8 @@ namespace VKPeopleInviter.Droid
                     User user = responseUsers.users.First();
                     if (user != null) {
                         e.Account.Username = user.FirstName + " " + user.LastName;
+						e.Account.Properties.Add("token", token);
+						e.Account.Properties.Add("userID", userId);
                         AccountStore.Create(Context).Save(e.Account, App.AppName);
                         App.User = user;
                     }

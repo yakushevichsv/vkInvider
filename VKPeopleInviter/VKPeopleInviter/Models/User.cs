@@ -20,5 +20,20 @@ namespace VKPeopleInviter
 
 		[JsonProperty ("sex")]
 		public string Gender { get; set; }
+
+		[JsonIgnore]
+		public string FullName
+		{
+			get
+			{
+				return FirstName + " " + LastName;
+			}
+		}
+
+		[JsonIgnore]
+		public string Token { get; set;}
+
+		[JsonIgnore]
+		public DateTime ExpirationDate { get; set;}
 	}
 }

@@ -7,9 +7,10 @@ namespace VKPeopleInviter
 {
 	public partial class ItemsSelectorPage : ContentPage
 	{
-		void Handle_Clicked(object sender, System.EventArgs e)
+		async void Handle_Clicked(object sender, System.EventArgs e)
 		{
-			throw new NotImplementedException();
+			
+			await Navigation.PushModalAsync(new InvitePeopleToGroup());
 		}
 
 		void HandleGroupsUse(object sender, System.EventArgs e)

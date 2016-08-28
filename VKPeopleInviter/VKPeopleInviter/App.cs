@@ -19,7 +19,8 @@ namespace VKPeopleInviter
         public static bool IsLoggedIn
         {
             get
-            {
+			{
+				//return false;
                 if (User != null)
                     return !(string.IsNullOrWhiteSpace(User.FirstName) && string.IsNullOrWhiteSpace(User.LastName));
                 else
@@ -47,7 +48,7 @@ namespace VKPeopleInviter
 
 						//NavPage.Navigation.PushAsync(new LoginPage());
 						//NavPage.Navigation.PopToRootAsync();
-						//NavPage.Navigation.PushAsync(new ItemsSelectorPage()
+						//NavPage.Navigation.PushAsync(new ItemsSelectorPage(
 					}
                 });
             }

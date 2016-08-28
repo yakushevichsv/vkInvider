@@ -43,10 +43,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Views\AuthenticationPage.xaml.cs" />
     <Compile Include="Views\LoginPage.xaml.cs" />
-    <Compile Include="VKManager.cs" />
     <Compile Include="Views\ItemsSelectorPage.xaml.cs">
       <DependentUpon>ItemsSelectorPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="InvitePeopleToGroup.xaml.cs">
+      <DependentUpon>InvitePeopleToGroup.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Models\VKManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="ModernDev.InTouch, Version=1.0.14.0, Culture=neutral, processorArchitecture=MSIL">
@@ -93,6 +96,9 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Views\ItemsSelectorPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="InvitePeopleToGroup.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
   </ItemGroup>

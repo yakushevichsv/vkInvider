@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="VKPeopleInviter.InvitePeopleToGroup">
+ <ContentPage.Padding>
+    <OnPlatform x:TypeArguments="Thickness">
+      <OnPlatform.iOS>
+        0, 20, 0, 0
+      </OnPlatform.iOS>
+      <OnPlatform.Android>
+        0, 0, 0, 0
+      </OnPlatform.Android>
+      <OnPlatform.WinPhone>
+        0, 0, 0, 0
+      </OnPlatform.WinPhone>
+    </OnPlatform>
+  </ContentPage.Padding>
+
+	<ContentPage.Content>
+		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand">
+		<SearchBar Placeholder="Enter name" TextChanged="Handle_TextChanged" SearchButtonPressed="Handle_SearchButtonPressed"/>
+			<ListView IsPullToRefreshEnabled="True" Refreshing="Handle_Refreshing" ItemTapped="Handle_ItemTapped" x:Name="PeopleListView">
+      <ListView.ItemTemplate>
+        <DataTemplate>
+          <ImageCell ImageSource="{Binding Picture}" Text="{Binding FullName}" Detail="{Binding Id}"> 
+            <ImageCell.ContextActions>
+              <MenuItem Text="Action" Clicked="Handle_Clicked"></MenuItem>
+            </ImageCell.ContextActions>
+          </ImageCell>
+        </DataTemplate>
+      </ListView.ItemTemplate>
+    </ListView>
+  </StackLayout>
+	</ContentPage.Content>
+</ContentPage>
