@@ -16,6 +16,8 @@ namespace VKPeopleInviter.iOS
 	public class AuthentificationPageRenderer: PageRenderer
 	{
 		bool isShown = false;
+		bool forced = false;
+
 		UIKit.UIViewController authVC = null;
 
 		private void performAuthentification()
@@ -54,7 +56,7 @@ namespace VKPeopleInviter.iOS
 				Console.WriteLine("Exception " + exp.ToString());
 			}
 
-			if (fAccount == null) {
+			if (fAccount == null || forced) {
 
 				if (!isShown)
 				{
@@ -77,7 +79,7 @@ namespace VKPeopleInviter.iOS
 					{
 						TimeSpan spanDiff = DateTime.Now.Subtract(expirationDate);
 						diff = spanDiff.TotalSeconds;
-						if (diff > 0.0)
+						if (diff > 0.0 && !forced)
 						{
 							VKManager.sharedInstance().didAuthorizeWithToken(tokenString, (int)Convert.ToInt64(userId), (int)diff);
 

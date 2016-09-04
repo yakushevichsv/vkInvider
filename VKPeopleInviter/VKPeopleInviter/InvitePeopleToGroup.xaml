@@ -16,18 +16,16 @@
 
 	<ContentPage.Content>
 		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand">
-		<SearchBar Placeholder="Enter name" TextChanged="Handle_TextChanged" SearchButtonPressed="Handle_SearchButtonPressed"/>
-			<ListView IsPullToRefreshEnabled="True" Refreshing="Handle_Refreshing" ItemTapped="Handle_ItemTapped" x:Name="PeopleListView">
+		<SearchBar Placeholder="Enter name" TextChanged="Handle_TextChanged" SearchButtonPressed="Handle_SearchButtonPressed" x:Name="SearchPeople"/>
+	<ListView IsPullToRefreshEnabled="True" Refreshing="Handle_Refreshing" ItemSelected="Handle_ItemSelected" x:Name="PeopleListView">
       <ListView.ItemTemplate>
         <DataTemplate>
           <ImageCell ImageSource="{Binding Picture}" Text="{Binding FullName}" Detail="{Binding Id}"> 
-            <ImageCell.ContextActions>
-              <MenuItem Text="Action" Clicked="Handle_Clicked"></MenuItem>
-            </ImageCell.ContextActions>
           </ImageCell>
         </DataTemplate>
       </ListView.ItemTemplate>
     </ListView>
+			<Button Text="Send message" Clicked="Handle_SendClicked" x:Name="SendButton" IsVisible="false"/>
   </StackLayout>
 	</ContentPage.Content>
 </ContentPage>

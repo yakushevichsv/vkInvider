@@ -15,7 +15,7 @@ namespace VKPeopleInviter
 		public static string ClientSecret = "E9x6ywxHcYnnqf3ZXtjd";
 
 		// These values do not need changing
-		public static string Scope = "friends,video,groups,offline";
+		public static string Scope = "friends,video,groups,offline,messages";
 		public static string AuthorizeUrl = "https://oauth.vk.com/authorize";
 		//public static string AccessTokenUrl = "https://accounts.google.com/o/oauth2/token";
 		public static string UserInfoUrl = "https://api.vk.com/method/users.get";

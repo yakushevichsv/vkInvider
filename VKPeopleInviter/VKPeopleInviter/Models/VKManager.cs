@@ -8,6 +8,8 @@ using ModernDev.InTouch;
 using System.Diagnostics;
 using System.Net.Http;
 using Newtonsoft.Json;
+using System.Net;
+using Newtonsoft.Json.Linq;
 
 namespace VKPeopleInviter
 {
@@ -90,6 +92,47 @@ namespace VKPeopleInviter
 					var finalString = "{response:[" + jsonString;
 						var responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(finalString);
 						return new List<User>(responseUsers.users);
+				}
+			}
+			return null;
+		}
+
+		public async Task<Int64[]> SendMessageToUsers(string message, string[] userIDs)
+		{
+			if (userIDs.Length == 0 || message.Length == 0 ) {
+				return null;
+			}
+
+			string resultIDs = "";
+
+			foreach (string userId in userIDs) {
+				if (resultIDs.Length != 0)
+					resultIDs = String.Concat(resultIDs, ",");
+				resultIDs = String.Concat(resultIDs,userId);
+			}
+
+			String token = this.client.Session.AccessToken;
+			string parameters = "user_ids=" + resultIDs + "&message=" + WebUtility.UrlEncode(message) + "&oauth=2";
+
+			String template = "https://api.vk.com/method/messages.send?" + parameters + "&access_token=" + token;
+			using (var client = new HttpClient())
+			{
+				var response = await client.GetAsync(template).ConfigureAwait(false);
+				if (response.IsSuccessStatusCode)
+				{
+					var content = response.Content;
+					Debug.WriteLine("Content " + content.ToString());
+
+					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
+
+					var result = JObject.Parse(jsonString);
+
+
+					//var jsonValue = JsonValue.Parse(jsonString);
+
+					var jsonResponse = result["response"].Value<JArray>();
+					Int64[] ids = jsonResponse.Select(arg1 => (Int64)arg1).ToArray() ;
+					return ids;
 				}
 			}
 			return null;
