@@ -10,6 +10,7 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using System.Net;
 using Newtonsoft.Json.Linq;
+using System.Threading;
 
 namespace VKPeopleInviter
 {
@@ -17,7 +18,8 @@ namespace VKPeopleInviter
     {
         private int clientId = 5537512;
         private string clientSecretToken = "E9x6ywxHcYnnqf3ZXtjd";
-     
+
+		private Dictionary<string, CancellationTokenSource> cacheMap = new Dictionary<string, CancellationTokenSource>();
 
 		private static VKManager s_sharedInstance = new VKManager();
 
@@ -54,18 +56,21 @@ namespace VKPeopleInviter
 
 		}
 
-		public async Task<Response<ItemsList<ModernDev.InTouch.User>>> searchPeople(string query) 
+		public bool CancelSearchPeople(string query)
 		{
-			UsersSearchParams searchParams = new UsersSearchParams();
-			searchParams.Country = 3; //Belarus
-			searchParams.AgeFrom = 18;
-			searchParams.AgeTo = 28;
-			searchParams.Query = query;
-			//Rechica - 5835
-			//Minsk - 282
-			searchParams.City = 282;
-			searchParams.SortByDate = true;
-			return await client.Users.Search(searchParams);
+			if (cacheMap.ContainsKey(query))
+			{
+				var cancelSource = cacheMap[query];
+				cacheMap.Remove(query);
+				cancelSource.Cancel();
+				return true;
+			}
+			return false;
+		}
+
+		string cancelSearchAPIKey
+		{
+			get { return "https://api.vk.com/method/users.search?";}
 		}
 
 		public async Task<List<User>> SearchPeople(string query,int offset = 0, int count = 100)
@@ -73,10 +78,18 @@ namespace VKPeopleInviter
 			//String template = "https://api.vk.com/method/METHOD_NAME?PARAMETERS&access_token=ACCESS_TOKEN"
 			String token = this.client.Session.AccessToken;
 			string parameters = "q=" + query + "&sort=1&fields=photo_100,uid,first_name,last_name" + "&sex=1&age_from=19&age_to=34" + "&country=3&city=282" + "&offset=" + offset + "&count=" + count;
-			String template = "https://api.vk.com/method/users.search?" + parameters + "&access_token=" + token;
+			string templatePart = cancelSearchAPIKey + parameters;
+			string template = templatePart + "&access_token=" + token;
+
+			CancelSearchPeople(cancelSearchAPIKey);
+
 			using (var client = new HttpClient())
 			{
-				var response = await client.GetAsync(template).ConfigureAwait(false);
+
+				CancellationTokenSource tokenSource = new CancellationTokenSource();
+				cacheMap[cancelSearchAPIKey] = tokenSource;
+
+				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;

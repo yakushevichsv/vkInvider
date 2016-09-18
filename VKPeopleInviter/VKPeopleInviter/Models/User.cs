@@ -1,5 +1,6 @@
 ﻿using System;
 using Newtonsoft.Json;
+using Xamarin.Forms;
 
 namespace VKPeopleInviter
 {
@@ -21,6 +22,14 @@ namespace VKPeopleInviter
 		[JsonProperty ("sex")]
 		public string Gender { get; set; }
 
+		[JsonIgnore]
+		public ImageSource PictureSource
+		{
+			get
+			{
+				return new UriImageSource() { Uri = new Uri(Picture)};
+			}
+		}
 		[JsonIgnore]
 		public string FullName
 		{

@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="VKPeopleInviter.InvitePeopleToGroup">
- <ContentPage.Padding>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="VKPeopleInviter.InvitePeopleToGroup" xmlns:c="clr-namespace:VKPeopleInviter.Controls"	Title="Invite People to group">
+<ContentPage.ToolbarItems>
+	<ToolbarItem Name="Select All" x:Name="LeftNavButton"/>
+	<ToolbarItem Name="Next" x:Name="RightNavButton"/>
+</ContentPage.ToolbarItems>
+	<ContentPage.Padding>
     <OnPlatform x:TypeArguments="Thickness">
       <OnPlatform.iOS>
         0, 20, 0, 0
@@ -13,15 +17,14 @@
       </OnPlatform.WinPhone>
     </OnPlatform>
   </ContentPage.Padding>
-
 	<ContentPage.Content>
 		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand">
 		<SearchBar Placeholder="Enter name" TextChanged="Handle_TextChanged" SearchButtonPressed="Handle_SearchButtonPressed" x:Name="SearchPeople"/>
-	<ListView IsPullToRefreshEnabled="True" Refreshing="Handle_Refreshing" ItemSelected="Handle_ItemSelected" x:Name="PeopleListView">
+	<ListView IsPullToRefreshEnabled="True" Refreshing="Handle_Refreshing" ItemSelected="Handle_ItemSelected" x:Name="PeopleListView" ItemAppearing="Handle_ItemAppearing">
       <ListView.ItemTemplate>
         <DataTemplate>
-          <ImageCell ImageSource="{Binding Picture}" Text="{Binding FullName}" Detail="{Binding Id}"> 
-          </ImageCell>
+		 <c:UserSelectableCell FullName="{Binding Item.FullName}" ImageSource="{Binding Item.PictureSource}" Selected="{Binding Selected, Mode = TwoWay}">
+						</c:UserSelectableCell>
         </DataTemplate>
       </ListView.ItemTemplate>
     </ListView>
