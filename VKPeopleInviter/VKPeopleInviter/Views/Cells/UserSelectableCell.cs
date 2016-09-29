@@ -79,12 +79,11 @@ namespace VKPeopleInviter.Controls
 			set
 			{
 				SetValue(SelectedProperty, value.ToString());
-
 				ivSelected.Source = value ? sCheckedImageSource : sUnckeckedImageSource;
 			}
 		}
 
-		public UserSelectableCell()
+		public UserSelectableCell() : base()
 		{
 			lblFullName = new Label() { HorizontalOptions = LayoutOptions.StartAndExpand };
 			ivPicture = new Image() { Aspect = Aspect.AspectFit };
@@ -93,10 +92,15 @@ namespace VKPeopleInviter.Controls
 			ivSelected = new Image() { Aspect = Aspect.AspectFit };
 			ivSelected.HeightRequest = 16;
 
-			var aiIndicator = new ActivityIndicator();
-			aiIndicator.IsRunning = false;
+			//var aiIndicator = new ActivityIndicator();
+			//aiIndicator.IsRunning = false;
 
-			this.SetBinding(SelectedProperty,"Selected", BindingMode.TwoWay);
+			this.SetBinding(SelectedProperty, new Binding("Selected"));
+
+
+			Switch mainSwitch = new Switch();
+			mainSwitch.SetBinding(Switch.IsToggledProperty, new Binding("Selected"));
+
 
 			StackLayout cellWrapper = new StackLayout();
 			StackLayout contentLayout = new StackLayout();
@@ -105,36 +109,14 @@ namespace VKPeopleInviter.Controls
 			contentLayout.Children.Add(lblFullName);
 			contentLayout.Children.Add(ivPicture);
 			contentLayout.Children.Add(lblFriendShip);
+			ivSelected.IsVisible = false;
 			contentLayout.Children.Add(ivSelected);
-			contentLayout.Children.Add(aiIndicator);
+			contentLayout.Children.Add(mainSwitch);
 			cellWrapper.Children.Add(contentLayout);
 
 			cellWrapper.HeightRequest = ivPicture.HeightRequest + 2;
 
 			this.View = cellWrapper;
-
-			/*
-			var layout = new Grid()
-			{
-				ColumnDefinitions = {
-					new ColumnDefinition {Width = new GridLength(4,GridUnitType.Star)},
-					new ColumnDefinition {Width = new GridLength(1,GridUnitType.Star)}
-				},
-				RowDefinitions = {
-					new RowDefinition { Height = new GridLength(1,GridUnitType.Star)},
-					new RowDefinition { Height = new GridLength(3,GridUnitType.Star)},
-					new RowDefinition { Height = new GridLength(1,GridUnitType.Star)},
-				}
-			};
-			layout.Children.Add(lblFullName, 0, 0);
-			layout.Children.Add(ivPicture, 0, 1);
-			layout.Children.Add(lblFriendShip, 0, 2);
-			layout.Children.Add(ivSelected, 1, 0);
-			Grid.SetRowSpan(ivSelected, 3);
-
-			this.View = layout; */
-
-
 		}
 
 		static FriendShipStatus ConvertToFriendShipFromObject(object ojb)

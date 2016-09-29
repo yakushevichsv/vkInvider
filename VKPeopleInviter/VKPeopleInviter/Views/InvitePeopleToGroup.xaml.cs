@@ -21,7 +21,7 @@ namespace VKPeopleInviter
 
 			var Item = (MultipleItemSelectlon<User>)e.Item;
 
-			Item.Selected = arrayOfIds.Contains(Item.Item.Id);
+			Item.Selected = Item.Selected;//arrayOfIds.Contains(Item.Item.Id);
 
 			var isLast = source.Count != 0 && (source[source.Count - 1].Item.Id).Equals(((MultipleItemSelectlon<User>)e.Item).Item.Id);
 
@@ -29,7 +29,7 @@ namespace VKPeopleInviter
 				SearchPrivate(searchText, count + offset, 100);
 		}
 
-		private List<string> arrayOfIds = new List<String>();
+		//private List<string> arrayOfIds = new List<String>();
 
 		protected override void OnAppearing()
 		{
@@ -44,31 +44,18 @@ namespace VKPeopleInviter
 				if (((ListView)sender).SelectedItem != null)
 				{
 					MultipleItemSelectlon<User> user = (MultipleItemSelectlon<User>)((ListView)sender).SelectedItem;
-					var index = arrayOfIds.IndexOf(user.Item.Id);
-
-					if (index != Int32.MaxValue)
-					{
-						arrayOfIds.RemoveAt(index);
-					}
+					user.Selected = false;
 				}
 
-				SendButton.IsVisible = arrayOfIds.Count != 0;
+				SendButton.IsVisible = true;
 
 				return;
 			}
 
 			MultipleItemSelectlon<User> selUser = (MultipleItemSelectlon<User>)e.SelectedItem;
-			var selected = false;
-			if (arrayOfIds.Contains(selUser.Item.Id))
-			{
-				arrayOfIds.Remove(selUser.Item.Id);
-			}
-			else {
-				selected = true;
-				arrayOfIds.Add(selUser.Item.Id);
-			}
-			selUser.Selected = selected;
-			SendButton.IsVisible = arrayOfIds.Count != 0;
+
+			selUser.Selected = !selUser.Selected;
+			//SendButton.IsVisible = arrayOfIds.Count != 0;
 			//((ListView)sender).SelectedItem = null;
 		}
 
@@ -107,7 +94,7 @@ namespace VKPeopleInviter
 				PeopleListView.EndRefresh();
 					offset = 0;
 				count = 0;
-				arrayOfIds.Clear();
+				//arrayOfIds.Clear();
 				useMinimum = true;
 				PeopleListView.ItemsSource = null;
 			}
@@ -170,7 +157,7 @@ namespace VKPeopleInviter
 		{
 			try
 			{
-				var result = await VKManager.sharedInstance().SendMessageToUsers("Привет Катюха \n\r Читай тут бай ?" + "http://www.tut.by", arrayOfIds.ToArray());
+				var result = await VKManager.sharedInstance().SendMessageToUsers("Привет Катюха \n\r Читай тут бай ?" + "http://www.tut.by", new List<String>().ToArray());
 				Debug.WriteLine("Result " + result);
 				//analayze results of sending...
 			}

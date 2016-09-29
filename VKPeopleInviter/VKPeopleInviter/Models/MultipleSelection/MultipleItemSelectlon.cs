@@ -19,7 +19,7 @@ namespace VKPeopleInviter
 			{
 				m_Selected = value;
 
-				if (PropertyChanged != null)
+				if (PropertyChanged != null) 
 					PropertyChanged(this, new PropertyChangedEventArgs("Selected"));
 			}
 		}
