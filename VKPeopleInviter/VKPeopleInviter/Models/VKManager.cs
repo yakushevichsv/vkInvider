@@ -102,7 +102,7 @@ namespace VKPeopleInviter
 					index = jsonString.IndexOf('{');
 					if (index == -1)
 					{
-						return null;
+						return new List<User>();
 					}
 					jsonString = jsonString.Substring(index);
 					var length = jsonString.Length;
@@ -112,7 +112,7 @@ namespace VKPeopleInviter
 						return new List<User>(responseUsers.users);
 				}
 			}
-			return null;
+			return new List<User>();
 		}
 
 		public async Task<long[]> SendMessageToUsers(string message, string[] userIDs)
@@ -139,7 +139,7 @@ namespace VKPeopleInviter
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;
-					Debug.WriteLine("Content " + content));
+					Debug.WriteLine("Content " + content);
 
 					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
 

@@ -53,7 +53,7 @@ namespace VKPeopleInviter
 
 			selUser.Selected = !selUser.Selected;
 			SendButton.IsVisible = GetSelection().Count != 0;
-			//((ListView)sender).SelectedItem = null;
+			((ListView)sender).SelectedItem = null;
 		}
 
 
@@ -85,6 +85,7 @@ namespace VKPeopleInviter
 			{
 				cancelSearch = true;
 				((SearchBar)sender).Text = sText;
+				VKManager.sharedInstance().CancelSearchPeople(sText);
 				PeopleListView.EndRefresh();
 
 				return;
@@ -124,29 +125,34 @@ namespace VKPeopleInviter
 				try
 				{
 					PeopleListView.BeginRefresh();
-							var result = await VKManager.sharedInstance().SearchPeople(text, offset2, count2);
+					var result = await VKManager.sharedInstance().SearchPeople(text, offset2, count2);
 					var finalResult = new List<MultipleItemSelectlon<User>>();
 
 					this.searchText = text;
 					this.offset = offset2;
+					if (result.Count != 0)
 					this.count = result.Count;
 
-					var source = (List<VKPeopleInviter.MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
+					var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
 
-					if (source != null && source.Count != 0) 
+					if (source != null && source.Count != 0)
 						finalResult.AddRange(source);
-						
+
 
 					foreach (var currentUser in result)
 						finalResult.Add(new MultipleItemSelectlon<User>() { Selected = false, Item = currentUser });
-					
+
 
 					PeopleListView.ItemsSource = finalResult;
+				}
+				catch (OperationCanceledException error)
+				{
+					Debug.WriteLine("Cancellation " + error);
 				}
 				catch (Exception error)
 				{
 					//TODO: analyze too many request...
-					Debug.WriteLine("Error " + error.ToString());
+					Debug.WriteLine("Error " + error);
 
 					//var alert = DisplayAlert("Error", error.ToString(), "Cancel");
 				}
