@@ -21,15 +21,12 @@ namespace VKPeopleInviter
 
 			var Item = (MultipleItemSelectlon<User>)e.Item;
 
-			Item.Selected = Item.Selected;//arrayOfIds.Contains(Item.Item.Id);
 
 			var isLast = source.Count != 0 && (source[source.Count - 1].Item.Id).Equals(((MultipleItemSelectlon<User>)e.Item).Item.Id);
 
 			if (isLast) 
 				SearchPrivate(searchText, count + offset, 100);
 		}
-
-		//private List<string> arrayOfIds = new List<String>();
 
 		protected override void OnAppearing()
 		{
@@ -47,7 +44,7 @@ namespace VKPeopleInviter
 					user.Selected = false;
 				}
 
-				SendButton.IsVisible = true;
+				SendButton.IsVisible = GetSelection().Count != 0;
 
 				return;
 			}
@@ -55,8 +52,15 @@ namespace VKPeopleInviter
 			MultipleItemSelectlon<User> selUser = (MultipleItemSelectlon<User>)e.SelectedItem;
 
 			selUser.Selected = !selUser.Selected;
-			//SendButton.IsVisible = arrayOfIds.Count != 0;
+			SendButton.IsVisible = GetSelection().Count != 0;
 			//((ListView)sender).SelectedItem = null;
+		}
+
+
+		public List<User> GetSelection()
+		{
+			var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
+			return source.Where(item => item.Selected).Select(wrappedItem => wrappedItem.Item).ToList();
 		}
 
 		void Handle_SearchButtonPressed(object sender, System.EventArgs e)
@@ -153,11 +157,12 @@ namespace VKPeopleInviter
 			}
 		}
 
-		async void Handle_SendClicked(object sender, System.EventArgs e)
+		async void Handle_SendClicked(object sender, EventArgs e)
 		{
 			try
 			{
-				var result = await VKManager.sharedInstance().SendMessageToUsers("Привет Катюха \n\r Читай тут бай ?" + "http://www.tut.by", new List<String>().ToArray());
+				var ids = GetSelection().Select(item => item.Id).ToArray();
+				var result = await VKManager.sharedInstance().SendMessageToUsers("Привет  \n\r Читай тут бай ?" + "http://www.tut.by", ids);
 				Debug.WriteLine("Result " + result);
 				//analayze results of sending...
 			}

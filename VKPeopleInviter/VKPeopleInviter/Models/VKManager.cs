@@ -115,7 +115,7 @@ namespace VKPeopleInviter
 			return null;
 		}
 
-		public async Task<Int64[]> SendMessageToUsers(string message, string[] userIDs)
+		public async Task<long[]> SendMessageToUsers(string message, string[] userIDs)
 		{
 			if (userIDs.Length == 0 || message.Length == 0 ) {
 				return null;
@@ -139,7 +139,7 @@ namespace VKPeopleInviter
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;
-					Debug.WriteLine("Content " + content.ToString());
+					Debug.WriteLine("Content " + content));
 
 					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
 
@@ -149,7 +149,7 @@ namespace VKPeopleInviter
 					//var jsonValue = JsonValue.Parse(jsonString);
 
 					var jsonResponse = result["response"].Value<JArray>();
-					Int64[] ids = jsonResponse.Select(arg1 => (Int64)arg1).ToArray() ;
+					Int64[] ids = jsonResponse.Select(arg1 => (long)arg1).ToArray() ;
 					return ids;
 				}
 			}
