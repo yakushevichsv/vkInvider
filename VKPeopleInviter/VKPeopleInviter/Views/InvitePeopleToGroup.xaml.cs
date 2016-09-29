@@ -26,7 +26,7 @@ namespace VKPeopleInviter
 			var isLast = source.Count != 0 && (source[source.Count - 1].Item.Id).Equals(((MultipleItemSelectlon<User>)e.Item).Item.Id);
 
 			if (isLast) 
-				searchPrivate(searchText, count + offset, 100);
+				SearchPrivate(searchText, count + offset, 100);
 		}
 
 		private List<string> arrayOfIds = new List<String>();
@@ -75,7 +75,7 @@ namespace VKPeopleInviter
 		void Handle_SearchButtonPressed(object sender, System.EventArgs e)
 		{
 			var text = ((SearchBar)sender).Text;
-			searchPrivate(text);
+			SearchPrivate(text);
 		}
 
 
@@ -120,10 +120,10 @@ namespace VKPeopleInviter
 			}
 
 			((SearchBar)sender).Text = text;
-			searchPrivate(text, offset, useMinimum ? c_OrigCount : 100);
+			SearchPrivate(text, offset, useMinimum ? c_OrigCount : 100);
 		}
 
-		private async void searchPrivate(string text, int offset2 = 0, int count2 = 100)
+		private async void SearchPrivate(string text, int offset2 = 0, int count2 = 100)
 		{	
 			if (string.IsNullOrWhiteSpace(text))
 			{

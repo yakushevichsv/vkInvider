@@ -149,8 +149,15 @@ namespace VKPeopleInviter.iOS
 
 						e.Account.Properties.Add("expiration", current2.ToString());
 						AccountStore store = AccountStore.Create();
-						store.Save(e.Account, App.AppName);
-						App.User = user;
+						try
+						{
+							await store.SaveAsync(e.Account, App.AppName);
+							App.User = user;
+						}
+						catch (Exception exp)
+						{
+							Console.WriteLine("Keychain Exception " + exp);
+						}
 					}
 				}
 			}

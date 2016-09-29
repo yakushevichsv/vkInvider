@@ -10,7 +10,7 @@ namespace VKPeopleInviter
 		async void Handle_Clicked(object sender, System.EventArgs e)
 		{
 			
-			await Navigation.PushModalAsync(new InvitePeopleToGroup());
+			await Navigation.PushAsync(new InvitePeopleToGroup());
 		}
 
 		void HandleGroupsUse(object sender, System.EventArgs e)

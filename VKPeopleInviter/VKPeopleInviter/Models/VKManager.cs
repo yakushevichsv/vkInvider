@@ -90,6 +90,7 @@ namespace VKPeopleInviter
 				cacheMap[cancelSearchAPIKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
+				CancelSearchPeople(cancelSearchAPIKey);
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;
@@ -99,6 +100,10 @@ namespace VKPeopleInviter
 					jsonString = jsonString.Substring(index+1);
 
 					index = jsonString.IndexOf('{');
+					if (index == -1)
+					{
+						return null;
+					}
 					jsonString = jsonString.Substring(index);
 					var length = jsonString.Length;
 

@@ -88,11 +88,32 @@ namespace VKPeopleInviter.Controls
 		{
 			lblFullName = new Label() { HorizontalOptions = LayoutOptions.StartAndExpand };
 			ivPicture = new Image() { Aspect = Aspect.AspectFit };
+			ivPicture.HeightRequest = 32;
 			lblFriendShip = new Label() { HorizontalOptions = LayoutOptions.Start};
 			ivSelected = new Image() { Aspect = Aspect.AspectFit };
+			ivSelected.HeightRequest = 16;
+
+			var aiIndicator = new ActivityIndicator();
+			aiIndicator.IsRunning = false;
 
 			this.SetBinding(SelectedProperty,"Selected", BindingMode.TwoWay);
 
+			StackLayout cellWrapper = new StackLayout();
+			StackLayout contentLayout = new StackLayout();
+			contentLayout.Orientation = StackOrientation.Horizontal;
+
+			contentLayout.Children.Add(lblFullName);
+			contentLayout.Children.Add(ivPicture);
+			contentLayout.Children.Add(lblFriendShip);
+			contentLayout.Children.Add(ivSelected);
+			contentLayout.Children.Add(aiIndicator);
+			cellWrapper.Children.Add(contentLayout);
+
+			cellWrapper.HeightRequest = ivPicture.HeightRequest + 2;
+
+			this.View = cellWrapper;
+
+			/*
 			var layout = new Grid()
 			{
 				ColumnDefinitions = {
@@ -111,7 +132,9 @@ namespace VKPeopleInviter.Controls
 			layout.Children.Add(ivSelected, 1, 0);
 			Grid.SetRowSpan(ivSelected, 3);
 
-			this.View = layout;
+			this.View = layout; */
+
+
 		}
 
 		static FriendShipStatus ConvertToFriendShipFromObject(object ojb)
