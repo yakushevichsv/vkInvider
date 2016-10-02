@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xamarin.Forms;
 
 namespace VKPeopleInviter
@@ -33,46 +34,35 @@ namespace VKPeopleInviter
             get
             {
                 return new Action(() => {
-					//Current.MainPage.Navigation.PopModalAsync();
+					Current.MainPage.Navigation.PopModalAsync();
                     if (IsLoggedIn)
 					{
-						//NavPage.PopToRootAsync();
-						//Current.MainPage.Navigation.RemovePage(NavPage.Navigation.NavigationStack.First());
-						Current.MainPage.Navigation.PushModalAsync(new ItemsSelectorPage());
-						//Current.MainPage.Navigation.InsertPageBefore(new ItemsSelectorPage(), NavPage.Navigation.NavigationStack.First());
-						//Current.MainPage.Navigation.PopToRootAsync();
-						//NavPage.CurrentPage = new ItemsSelectorPage()
-						//NavPage.PushAsync(new ItemsSelectorPage());
-						//NavPage.Navigation.InsertPageBefore(new ItemsSelectorPage(), NavPage.Navigation.NavigationStack.First());
-						//NavPage.Navigation.PushAsync(new ItemsSelectorPage());
-
-						//NavPage.Navigation.PushAsync(new LoginPage());
-						//NavPage.Navigation.PopToRootAsync();
-						//NavPage.Navigation.PushAsync(new ItemsSelectorPage(
+						NavPage.PushAsync(new ItemsSelectorPage());
 					}
                 });
             }
         }
 
-
-		public async static void MoveToItemsSelectionPage() 
-		{
-			await NavPage.CurrentPage.Navigation.PopModalAsync();
-			       
-			await NavPage.PushAsync(new ItemsSelectorPage());
-			//await Current.MainPage.Navigation.PopModalAsync();
-			//NavPage.Navigation.InsertPageBefore(new ItemsSelectorPage(), Current.MainPage.Navigation.NavigationStack.First());
-			//await NavPage.PopToRootAsync();
-			//await NavPage.PushAsync(new ItemsSelectorPage());
-			//NavPage.PushAsync(new ItemsSelectorPage());//NaNavigation.PushAsync(new ItemsSelectorPage());
-		}
-
         public App()
         {
 			User = new User();
 
-            NavPage = new NavigationPage(new LoginPage());
-            MainPage = NavPage;
+			var tabbedPage = new TabbedPage();
+
+			var navPage = new NavigationPage(new LoginPage());
+			navPage.Title = "Actions";
+
+			tabbedPage.Children.Add(navPage);
+
+			var settings = new SettingsPage();
+			settings.Title = "Settings";
+
+			tabbedPage.Children.Add(settings);
+			NavPage = navPage;
+
+			//tabbedPage.
+            //NavPage = new NavigationPage(new LoginPage());
+			MainPage = tabbedPage;
         }
 
         protected override void OnStart()

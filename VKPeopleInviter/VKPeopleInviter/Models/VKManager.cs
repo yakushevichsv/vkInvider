@@ -14,10 +14,10 @@ using System.Threading;
 
 namespace VKPeopleInviter
 {
-    public sealed class VKManager
-    {
-        private int clientId = 5537512;
-        private string clientSecretToken = "E9x6ywxHcYnnqf3ZXtjd";
+	public sealed class VKManager
+	{
+		private int clientId = 5537512;
+		private string clientSecretToken = "E9x6ywxHcYnnqf3ZXtjd";
 
 		private Dictionary<string, CancellationTokenSource> cacheMap = new Dictionary<string, CancellationTokenSource>();
 
@@ -28,26 +28,27 @@ namespace VKPeopleInviter
 			return s_sharedInstance;
 		}
 
-        private InTouch client { get; set; }
-        private VKManager()
-        {
+		private InTouch client { get; set; }
+		private VKManager()
+		{
 			client = new InTouch(true, true);//new InTouch(false, true);
 			client.SetApplicationSettings(clientId, clientSecretToken);
-        }
+		}
 
-        private void Client_CaptchaNeeded(object sender, ResponseError e)
-        {
-            Debug.WriteLine(e.Message);
-        }
+		private void Client_CaptchaNeeded(object sender, ResponseError e)
+		{
+			Debug.WriteLine(e.Message);
+		}
 
-        private void Client_AuthorizationFailed(object sender, ResponseError e)
-        {
-            Debug.WriteLine(e.Message);
-        }
+		private void Client_AuthorizationFailed(object sender, ResponseError e)
+		{
+			Debug.WriteLine(e.Message);
+		}
 
 		public void didAuthorizeWithToken(String token, int userId, int duration)
 		{
-			if (duration != 0) {
+			if (duration != 0)
+			{
 				client.SetSessionData(token, userId, duration);
 			}
 			else {
@@ -56,13 +57,14 @@ namespace VKPeopleInviter
 
 		}
 
-		public bool CancelSearchPeople(string query)
+		public bool CancelSearchPeople(string query, bool cancel = true)
 		{
 			if (cacheMap.ContainsKey(query))
 			{
 				var cancelSource = cacheMap[query];
 				cacheMap.Remove(query);
-				cancelSource.Cancel();
+				if (cancel)
+					cancelSource.Cancel();
 				return true;
 			}
 			return false;
@@ -70,14 +72,66 @@ namespace VKPeopleInviter
 
 		string cancelSearchAPIKey
 		{
-			get { return "https://api.vk.com/method/users.search?";}
+			get { return "https://api.vk.com/method/users.search?"; }
 		}
 
-		public async Task<List<User>> SearchPeople(string query,int offset = 0, int count = 100)
+		string cityInfoAPIKey
+		{
+			get { return "https://api.vk.com/method/database.getCities?"; }
+		}
+
+		public async Task<List<City>> ReceiveCities(string query, int country_id, int region_id, int count = 1)
+		{
+			string token = App.User.Token;
+
+			string parameters = "q=" + query + "&region=" + region_id + "&country=" + country_id + "&offset=" + 0 + "&count=" + count + "&need_all=" + 1;
+
+			string templatePart = cityInfoAPIKey + parameters;
+			string template = templatePart + "&access_token=" + token;
+
+			CancelSearchPeople(cityInfoAPIKey);
+
+			using (var client = new HttpClient())
+			{
+
+				CancellationTokenSource tokenSource = new CancellationTokenSource();
+				cacheMap[cityInfoAPIKey] = tokenSource;
+
+				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
+				CancelSearchPeople(cityInfoAPIKey);
+				if (response.IsSuccessStatusCode)
+				{
+					var content = response.Content;
+
+					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
+					var index = jsonString.IndexOf('{');
+					jsonString = jsonString.Substring(index + 1);
+
+					index = jsonString.IndexOf('{');
+					if (index == -1)
+					{
+						return new List<City>();
+					}
+					jsonString = jsonString.Substring(index);
+					var length = jsonString.Length;
+
+					var finalString = "{response:[" + jsonString;
+					var responseUsers = JsonConvert.DeserializeObject<ResponseCities>(finalString);
+					return new List<City>(responseUsers.Response.Items);
+				}
+			}
+			return new List<City>();
+		}
+
+
+		//5835 - Rechica
+		// 282 - Minsk
+		public async Task<List<User>> SearchPeople(string query, int cityCode, int offset = 0, int count = 100)
 		{
 			//String template = "https://api.vk.com/method/METHOD_NAME?PARAMETERS&access_token=ACCESS_TOKEN"
-			String token = this.client.Session.AccessToken;
-			string parameters = "q=" + query + "&sort=1&fields=photo_100,uid,first_name,last_name" + "&sex=1&age_from=19&age_to=34" + "&country=3&city=282" + "&offset=" + offset + "&count=" + count;
+			string token = App.User.Token;
+
+			string parameters = "q=" + query + "&sort=1&fields=photo_100,uid,first_name,last_name" + "&sex=1&age_from=19&age_to=34" + "&country=3&city=" + cityCode + "&offset=" + offset + "&count=" + count;
 			string templatePart = cancelSearchAPIKey + parameters;
 			string template = templatePart + "&access_token=" + token;
 
@@ -90,47 +144,52 @@ namespace VKPeopleInviter
 				cacheMap[cancelSearchAPIKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
-				CancelSearchPeople(cancelSearchAPIKey);
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;
 
 					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
+					CancelSearchPeople(cancelSearchAPIKey, false);
+
 					var index = jsonString.IndexOf('{');
-					jsonString = jsonString.Substring(index+1);
+					jsonString = jsonString.Substring(index + 1);
 
 					index = jsonString.IndexOf('{');
 					if (index == -1)
 					{
-						return new List<User>();
+						throw new UsersNotFoundException("Users were not found!");
+						//return new List<User>();
 					}
 					jsonString = jsonString.Substring(index);
 					var length = jsonString.Length;
 
 					var finalString = "{response:[" + jsonString;
-						var responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(finalString);
-						return new List<User>(responseUsers.users);
+					var responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(finalString);
+					return new List<User>(responseUsers.users);
 				}
+				CancelSearchPeople(cancelSearchAPIKey, false);
 			}
 			return new List<User>();
 		}
 
 		public async Task<long[]> SendMessageToUsers(string message, string[] userIDs)
 		{
-			if (userIDs.Length == 0 || message.Length == 0 ) {
+			if (userIDs.Length == 0 || message.Length == 0)
+			{
 				return null;
 			}
 
 			string resultIDs = "";
 
-			foreach (string userId in userIDs) {
+			foreach (string userId in userIDs)
+			{
 				if (resultIDs.Length != 0)
 					resultIDs = String.Concat(resultIDs, ",");
-				resultIDs = String.Concat(resultIDs,userId);
+				resultIDs = String.Concat(resultIDs, userId);
 			}
 
 			String token = this.client.Session.AccessToken;
-			string parameters = "user_ids=" + resultIDs + "&message=" + WebUtility.UrlEncode(message) + "&oauth=2";
+			string parameters = "user_ids=" + resultIDs + "&message=" + WebUtility.UrlEncode(message);
 
 			String template = "https://api.vk.com/method/messages.send?" + parameters + "&access_token=" + token;
 			using (var client = new HttpClient())
@@ -149,11 +208,17 @@ namespace VKPeopleInviter
 					//var jsonValue = JsonValue.Parse(jsonString);
 
 					var jsonResponse = result["response"].Value<JArray>();
-					Int64[] ids = jsonResponse.Select(arg1 => (long)arg1).ToArray() ;
+					Int64[] ids = jsonResponse.Select(arg1 => (long)arg1).ToArray();
 					return ids;
 				}
 			}
 			return null;
 		}
 	}
+}
+
+
+sealed class UsersNotFoundException : Exception
+{
+	public UsersNotFoundException(string message) : base(message) {}
 }

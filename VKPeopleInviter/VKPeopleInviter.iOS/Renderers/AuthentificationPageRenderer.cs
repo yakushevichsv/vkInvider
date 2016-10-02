@@ -88,7 +88,10 @@ namespace VKPeopleInviter.iOS
 							App.User.ExpirationDate = expirationDate;
 							App.User.Token = tokenString;
 							//App.MoveToItemsSelectionPage();
-							App.SuccessfulLoginAction.Invoke();
+							Device.BeginInvokeOnMainThread(() =>
+				{
+					App.SuccessfulLoginAction.Invoke();
+				});
 							return;
 						}
 					}
@@ -139,6 +142,7 @@ namespace VKPeopleInviter.iOS
 					User user = responseUsers.users.First();
 					if (user != null)
 					{
+						user.Token = token;
 						e.Account.Username = user.FirstName + " " + user.LastName;
 						e.Account.Properties.Add("token", token);
 						e.Account.Properties.Add("userID", userId);
@@ -151,8 +155,8 @@ namespace VKPeopleInviter.iOS
 						AccountStore store = AccountStore.Create();
 						try
 						{
-							await store.SaveAsync(e.Account, App.AppName);
 							App.User = user;
+							await store.SaveAsync(e.Account, App.AppName);
 						}
 						catch (Exception exp)
 						{
@@ -160,16 +164,12 @@ namespace VKPeopleInviter.iOS
 						}
 					}
 				}
+
+				Device.BeginInvokeOnMainThread(() =>
+				{
+					App.SuccessfulLoginAction.Invoke();
+				});
 			}
-
-			// If the user is logged in navigate to the TodoList page.
-			// Otherwise allow another login attempt.
-			/*Device.BeginInvokeOnMainThread(() =>
-			{
-				App.SuccessfulLoginAction.Invoke();
-			});*/
-
-			App.MoveToItemsSelectionPage();
 		}
 	}
 }

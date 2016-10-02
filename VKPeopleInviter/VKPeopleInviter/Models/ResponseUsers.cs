@@ -6,6 +6,6 @@ namespace VKPeopleInviter
     public class ResponseUsers
     {
         [JsonProperty("response")]
-            public User[] users { get; set; }
-     }
+        public User[] users { get; set; }
+    }
 }

@@ -9,6 +9,9 @@ namespace VKPeopleInviter
 		// Configure at https://console.aws.amazon.com/cognito/
 		public static string CognitoIdentityPoolId = "";
 
+		public static string CitiesKey = "CitiesKey";
+		public static string InvitationTemplateKey = "InvitationTemplateKey";
+
 		// OAuth
 		// For Google login, configure at https://console.developers.google.com/
 		public static string ClientId = "5537512";

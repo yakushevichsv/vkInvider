@@ -16,15 +16,15 @@ namespace VKPeopleInviter
 
 		void Handle_ItemAppearing(object sender, Xamarin.Forms.ItemVisibilityEventArgs e)
 		{
-			
-			var source = (List<VKPeopleInviter.MultipleItemSelectlon<User>>) ((ListView)sender).ItemsSource;
+
+			var source = (List<VKPeopleInviter.MultipleItemSelectlon<User>>)((ListView)sender).ItemsSource;
 
 			var Item = (MultipleItemSelectlon<User>)e.Item;
 
 
 			var isLast = source.Count != 0 && (source[source.Count - 1].Item.Id).Equals(((MultipleItemSelectlon<User>)e.Item).Item.Id);
 
-			if (isLast) 
+			if (isLast)
 				SearchPrivate(searchText, count + offset, 100);
 		}
 
@@ -94,10 +94,10 @@ namespace VKPeopleInviter
 			var useMinimum = false;
 			if (sText != text && sText != null && sText.Length != 0)
 			{
-					
+
 				VKManager.sharedInstance().CancelSearchPeople(sText);
 				PeopleListView.EndRefresh();
-					offset = 0;
+				offset = 0;
 				count = 0;
 				//arrayOfIds.Clear();
 				useMinimum = true;
@@ -116,7 +116,7 @@ namespace VKPeopleInviter
 		}
 
 		private async void SearchPrivate(string text, int offset2 = 0, int count2 = 100)
-		{	
+		{
 			if (string.IsNullOrWhiteSpace(text))
 			{
 				//Search all people...
@@ -125,13 +125,14 @@ namespace VKPeopleInviter
 				try
 				{
 					PeopleListView.BeginRefresh();
-					var result = await VKManager.sharedInstance().SearchPeople(text, offset2, count2);
+					int cityCode = 5835; // Rechica...
+					var result = await VKManager.sharedInstance().SearchPeople(text, cityCode, offset2, count2);
 					var finalResult = new List<MultipleItemSelectlon<User>>();
 
 					this.searchText = text;
 					this.offset = offset2;
 					if (result.Count != 0)
-					this.count = result.Count;
+						this.count = result.Count;
 
 					var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
 
@@ -144,6 +145,11 @@ namespace VKPeopleInviter
 
 
 					PeopleListView.ItemsSource = finalResult;
+				}
+				catch (UsersNotFoundException error)
+				{
+					Debug.WriteLine("Users not found " + error); 
+					await DisplayAlert("Error ", error.ToString(), "Cancel");
 				}
 				catch (OperationCanceledException error)
 				{
@@ -168,17 +174,14 @@ namespace VKPeopleInviter
 			try
 			{
 				var ids = GetSelection().Select(item => item.Id).ToArray();
-				var result = await VKManager.sharedInstance().SendMessageToUsers("Привет  \n\r Читай тут бай ?" + "http://www.tut.by", ids);
+				var settingsManager = new SettingsManager(Application.Current);
+				var result = await VKManager.sharedInstance().SendMessageToUsers(settingsManager.InvitationText, ids);
 				Debug.WriteLine("Result " + result);
 				//analayze results of sending...
 			}
 			catch (Exception error)
 			{
 				Debug.WriteLine("Error" + error.ToString());
-			}
-			finally
-			{
-				
 			}
 		}
 

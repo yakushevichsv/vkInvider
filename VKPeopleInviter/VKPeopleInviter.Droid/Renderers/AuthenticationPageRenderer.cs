@@ -49,7 +49,10 @@ namespace VKPeopleInviter.Droid
                     string[] results = account.Username.Split(new string[]{" "},StringSplitOptions.RemoveEmptyEntries);
                     App.User.FirstName = results.First();
                     App.User.LastName = results.Last();
-					App.SuccessfulLoginAction.Invoke ();
+					Device.BeginInvokeOnMainThread(() =>
+				{
+					App.SuccessfulLoginAction.Invoke();
+				});
 				}
 			}
 		}
@@ -86,7 +89,10 @@ namespace VKPeopleInviter.Droid
 			}
 			// If the user is logged in navigate to the TodoList page.
 			// Otherwise allow another login attempt.
-			App.SuccessfulLoginAction.Invoke ();
+			Device.BeginInvokeOnMainThread(() =>
+				{
+					App.SuccessfulLoginAction.Invoke();
+				});
 		}
 	}
 }
