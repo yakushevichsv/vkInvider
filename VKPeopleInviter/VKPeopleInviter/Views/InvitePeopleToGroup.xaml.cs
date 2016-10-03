@@ -60,7 +60,8 @@ namespace VKPeopleInviter
 		public List<User> GetSelection()
 		{
 			var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
-			return source.Where(item => item.Selected).Select(wrappedItem => wrappedItem.Item).ToList();
+			var result = source.Where(item => item.Selected).Select(wrappedItem => wrappedItem.Item).ToList();
+			return result;
 		}
 
 		void Handle_SearchButtonPressed(object sender, System.EventArgs e)
@@ -148,8 +149,11 @@ namespace VKPeopleInviter
 				}
 				catch (UsersNotFoundException error)
 				{
+					var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
+					if (source == null || source.Count == 0)
+						await DisplayAlert("Error ", error.Message, "Cancel");
+					
 					Debug.WriteLine("Users not found " + error); 
-					await DisplayAlert("Error ", error.ToString(), "Cancel");
 				}
 				catch (OperationCanceledException error)
 				{
@@ -173,15 +177,22 @@ namespace VKPeopleInviter
 		{
 			try
 			{
+				Debug.WriteLine("Handle_SendClicked");
 				var ids = GetSelection().Select(item => item.Id).ToArray();
 				var settingsManager = new SettingsManager(Application.Current);
 				var result = await VKManager.sharedInstance().SendMessageToUsers(settingsManager.InvitationText, ids);
-				Debug.WriteLine("Result " + result);
 				//analayze results of sending...
+				await DisplayAlert("Success", "All users were notified", "OK");
+				Debug.WriteLine("Success", "All users were notified");
+			}
+			catch (VKOperationException error)
+			{
+				Debug.WriteLine("Error" + error);
+				await DisplayAlert("Error", error.Message, "Cancel");
 			}
 			catch (Exception error)
 			{
-				Debug.WriteLine("Error" + error.ToString());
+				Debug.WriteLine("Error" + error);
 			}
 		}
 

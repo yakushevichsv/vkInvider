@@ -201,14 +201,44 @@ namespace VKPeopleInviter
 					Debug.WriteLine("Content " + content);
 
 					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
-
 					var result = JObject.Parse(jsonString);
 
+					var resultObj = result.AsJEnumerable().AsEnumerable();
+					long[] ids = new long[0];
 
-					//var jsonValue = JsonValue.Parse(jsonString);
+					foreach (JToken jToken in resultObj)
+					{
+						if (jToken.Type == JTokenType.Property) {
+							var property = (JProperty)jToken;
+							if (property.Name == "response")
+							{
+								var value = property.Value;
+								if (value.Type == JTokenType.Array)
+								{
+									var array = (JArray)value;
+									ids = array.Select(arg1 => (long)arg1).ToArray();
+								}
+							}
+							else if (property.Name == "error")
+							{
+								var value = property.Value;
 
-					var jsonResponse = result["response"].Value<JArray>();
-					Int64[] ids = jsonResponse.Select(arg1 => (long)arg1).ToArray();
+								if (value.Type == JTokenType.Object)
+								{
+									var obj = (JObject)value;
+
+									var errorMsg = obj["error_msg"].Value<string>();
+									var errorCode = obj["error_code"].Value<int>();
+									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
+
+									#if DEBUG
+									 	errorMsg += "Code " + errorCode;
+									#endif
+									throw new VKOperationException(errorMsg);
+								}
+							}
+						}
+					}
 					return ids;
 				}
 			}
@@ -218,7 +248,15 @@ namespace VKPeopleInviter
 }
 
 
+
 sealed class UsersNotFoundException : Exception
 {
-	public UsersNotFoundException(string message) : base(message) {}
+	public UsersNotFoundException(string message) : base(message) { }
+}
+
+sealed class VKOperationException : Exception
+{
+	public VKOperationException(string message) : base(message) { }
+
+
 }
