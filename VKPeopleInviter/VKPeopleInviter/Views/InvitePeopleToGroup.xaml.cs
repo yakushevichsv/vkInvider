@@ -64,9 +64,30 @@ namespace VKPeopleInviter
 			return result;
 		}
 
-		void Handle_SearchButtonPressed(object sender, System.EventArgs e)
+		private void RunActivityIndicator()
+		{
+			if (!ActivityIndicator.IsRunning)
+			{
+				ActivityIndicator.IsVisible = true;
+				ActivityIndicator.IsRunning = true;
+			}
+		}
+
+		private void StopActivityIndicator()
+		{
+			if (ActivityIndicator.IsRunning)
+			{
+				ActivityIndicator.IsVisible = false;
+				ActivityIndicator.IsRunning = false;
+			}
+		}
+
+		void Handle_SearchButtonPressed(object sender, EventArgs e)
 		{
 			var text = ((SearchBar)sender).Text;
+
+			RunActivityIndicator();
+
 			SearchPrivate(text);
 		}
 
@@ -118,9 +139,11 @@ namespace VKPeopleInviter
 
 		private async void SearchPrivate(string text, int offset2 = 0, int count2 = 100)
 		{
+			Debug.WriteLine("Search Private Text: " + text + "Offset " + offset2 + " Count " + count2);
 			if (string.IsNullOrWhiteSpace(text))
 			{
 				//Search all people...
+				Debug.Assert(false);
 			}
 			else {
 				try
@@ -155,9 +178,9 @@ namespace VKPeopleInviter
 					
 					Debug.WriteLine("Users not found " + error); 
 				}
-				catch (OperationCanceledException error)
+				catch (OperationCanceledException )
 				{
-					Debug.WriteLine("Cancellation " + error);
+					Debug.WriteLine("Search Canceled! ");
 				}
 				catch (Exception error)
 				{
@@ -169,6 +192,9 @@ namespace VKPeopleInviter
 				finally
 				{
 					PeopleListView.EndRefresh();
+
+					StopActivityIndicator();
+					Debug.WriteLine("Search Private Finished");
 				}
 			}
 		}
@@ -180,7 +206,7 @@ namespace VKPeopleInviter
 				Debug.WriteLine("Handle_SendClicked");
 				var ids = GetSelection().Select(item => item.Id).ToArray();
 				var settingsManager = new SettingsManager(Application.Current);
-				var result = await VKManager.sharedInstance().SendMessageToUsers(settingsManager.InvitationText, ids);
+				await VKManager.sharedInstance().SendMessageToUsers(settingsManager.InvitationText, ids);
 				//analayze results of sending...
 				await DisplayAlert("Success", "All users were notified", "OK");
 				Debug.WriteLine("Success", "All users were notified");

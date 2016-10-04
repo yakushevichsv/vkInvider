@@ -1,24 +1,15 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="VKPeopleInviter.InvitePeopleToGroup" xmlns:c="clr-namespace:VKPeopleInviter.Controls"	Title="Invite People to group">
 <ContentPage.ToolbarItems>
 	<ToolbarItem Name="Select All" x:Name="LeftNavButton"/>
 	<ToolbarItem Name="Next" x:Name="RightNavButton"/>
 </ContentPage.ToolbarItems>
-	<ContentPage.Padding>
-    <OnPlatform x:TypeArguments="Thickness">
-      <OnPlatform.iOS>
-        0, 20, 0, 0
-      </OnPlatform.iOS>
-      <OnPlatform.Android>
-        0, 0, 0, 0
-      </OnPlatform.Android>
-      <OnPlatform.WinPhone>
-        0, 0, 0, 0
-      </OnPlatform.WinPhone>
-    </OnPlatform>
-  </ContentPage.Padding>
 	<ContentPage.Content>
-		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand">
+		<RelativeLayout>
+		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" 
+					RelativeLayout.HeightConstraint="{ConstraintExpression Type=RelativeToParent, Property=Height, Factor=1}" 
+					RelativeLayout.WidthConstraint="{ConstraintExpression Type=RelativeToParent, Property=Width, Factor=1}"
+					>
 		<SearchBar Placeholder="Enter name" TextChanged="Handle_TextChanged" SearchButtonPressed="Handle_SearchButtonPressed" x:Name="SearchPeople"/>
 	<ListView IsPullToRefreshEnabled="True" Refreshing="Handle_Refreshing" ItemSelected="Handle_ItemSelected" x:Name="PeopleListView" ItemAppearing="Handle_ItemAppearing">
       <ListView.ItemTemplate>
@@ -30,5 +21,8 @@
     </ListView>
 			<Button Text="Send message" Clicked="Handle_SendClicked" x:Name="SendButton" IsVisible="false"/>
   </StackLayout>
+			<ActivityIndicator RelativeLayout.YConstraint="{ConstraintExpression Type=RelativeToParent, Property=Height, Factor=0.5}" 
+					RelativeLayout.XConstraint="{ConstraintExpression Type=RelativeToParent, Property=Width, Factor=0.5}" IsVisible="false" Color ="Black"  x:Name ="ActivityIndicator"/>
+			</RelativeLayout>
 	</ContentPage.Content>
 </ContentPage>
