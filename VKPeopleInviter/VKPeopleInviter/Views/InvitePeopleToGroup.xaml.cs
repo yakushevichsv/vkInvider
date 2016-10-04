@@ -66,7 +66,7 @@ namespace VKPeopleInviter
 
 		private void RunActivityIndicator()
 		{
-			if (!ActivityIndicator.IsRunning)
+			if (!ActivityIndicator.IsRunning && !PeopleListView.IsRefreshing)
 			{
 				ActivityIndicator.IsVisible = true;
 				ActivityIndicator.IsRunning = true;
@@ -85,10 +85,9 @@ namespace VKPeopleInviter
 		void Handle_SearchButtonPressed(object sender, EventArgs e)
 		{
 			var text = ((SearchBar)sender).Text;
-
+			searchText = text;
 			RunActivityIndicator();
-
-			SearchPrivate(text);
+			SearchPrivate(text, offset, count);
 		}
 
 
@@ -134,7 +133,10 @@ namespace VKPeopleInviter
 			}
 
 			((SearchBar)sender).Text = text;
-			SearchPrivate(text, offset, useMinimum ? c_OrigCount : 100);
+			//RunActivityIndicator();
+			searchText = text;
+			count = useMinimum ? c_OrigCount : 100;
+			PeopleListView.BeginRefresh();
 		}
 
 		private async void SearchPrivate(string text, int offset2 = 0, int count2 = 100)
@@ -148,7 +150,6 @@ namespace VKPeopleInviter
 			else {
 				try
 				{
-					PeopleListView.BeginRefresh();
 					int cityCode = 5835; // Rechica...
 					var result = await VKManager.sharedInstance().SearchPeople(text, cityCode, offset2, count2);
 					var finalResult = new List<MultipleItemSelectlon<User>>();
@@ -167,7 +168,6 @@ namespace VKPeopleInviter
 					foreach (var currentUser in result)
 						finalResult.Add(new MultipleItemSelectlon<User>() { Selected = false, Item = currentUser });
 
-
 					PeopleListView.ItemsSource = finalResult;
 				}
 				catch (UsersNotFoundException error)
@@ -175,8 +175,9 @@ namespace VKPeopleInviter
 					var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
 					if (source == null || source.Count == 0)
 						await DisplayAlert("Error ", error.Message, "Cancel");
-					
-					Debug.WriteLine("Users not found " + error); 
+					//else  if (source != null && source.Count != 0)
+					//PeopleListView.ScrollTo(source.Last(), ScrollToPosition.End, true);
+					Debug.WriteLine("Users not found " + error);
 				}
 				catch (OperationCanceledException )
 				{
@@ -191,8 +192,8 @@ namespace VKPeopleInviter
 				}
 				finally
 				{
-					PeopleListView.EndRefresh();
-
+					if (PeopleListView.IsRefreshing)
+						PeopleListView.EndRefresh();
 					StopActivityIndicator();
 					Debug.WriteLine("Search Private Finished");
 				}
@@ -225,6 +226,7 @@ namespace VKPeopleInviter
 		void Handle_Refreshing(object sender, System.EventArgs e)
 		{
 			//lthrow new NotImplementedException();
+			SearchPrivate(this.searchText, offset, count);
 		}
 
 		public InvitePeopleToGroup()

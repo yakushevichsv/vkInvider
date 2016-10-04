@@ -57,7 +57,7 @@ namespace VKPeopleInviter
 
 		}
 
-		public bool CancelSearchPeople(string query, bool cancel = true)
+		public CancellationTokenSource CancelSearchPeople(string query, bool cancel = true)
 		{
 			if (cacheMap.ContainsKey(query))
 			{
@@ -65,9 +65,9 @@ namespace VKPeopleInviter
 				cacheMap.Remove(query);
 				if (cancel)
 					cancelSource.Cancel();
-				return true;
+				return cancelSource;
 			}
-			return false;
+			return null;
 		}
 
 		string cancelSearchAPIKey
@@ -98,8 +98,8 @@ namespace VKPeopleInviter
 				cacheMap[cityInfoAPIKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
-				CancelSearchPeople(cityInfoAPIKey);
-				if (response.IsSuccessStatusCode)
+				var retTokenSource = CancelSearchPeople(cityInfoAPIKey);
+				if (response.IsSuccessStatusCode && !(retTokenSource == null || retTokenSource.IsCancellationRequested))
 				{
 					var content = response.Content;
 
@@ -157,6 +157,7 @@ namespace VKPeopleInviter
 					index = jsonString.IndexOf('{');
 					if (index == -1)
 					{
+						//TODO: analyze response and keep total amonunt of found users.
 						throw new UsersNotFoundException("Users were not found!");
 						//return new List<User>();
 					}
