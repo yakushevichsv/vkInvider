@@ -17,6 +17,8 @@ namespace VKPeopleInviter
 		public static string ClientId = "5537512";
 		public static string ClientSecret = "E9x6ywxHcYnnqf3ZXtjd";
 
+		public static string GroupId = "100802490";
+
 		// These values do not need changing
 		public static string Scope = "friends,video,groups,offline,messages";
 		public static string AuthorizeUrl = "https://oauth.vk.com/authorize";

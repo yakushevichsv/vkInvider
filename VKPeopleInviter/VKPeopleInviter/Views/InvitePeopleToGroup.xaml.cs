@@ -139,6 +139,9 @@ namespace VKPeopleInviter
 			PeopleListView.BeginRefresh();
 		}
 
+
+
+
 		private async void SearchPrivate(string text, int offset2 = 0, int count2 = 100)
 		{
 			Debug.WriteLine("Search Private Text: " + text + "Offset " + offset2 + " Count " + count2);
@@ -225,8 +228,23 @@ namespace VKPeopleInviter
 
 		void Handle_Refreshing(object sender, System.EventArgs e)
 		{
-			//lthrow new NotImplementedException();
 			SearchPrivate(this.searchText, offset, count);
+		}
+
+		void HandleNextToolBarClicked(object sender, System.EventArgs e)
+		{
+			var list = GetSelection();
+			if (list.Count != 0)
+			{
+				var result = new List<GroupDetectionMultipleItemSelection<User>>();
+				foreach (var arrayElemenet in list) {
+					var newItem = new GroupDetectionMultipleItemSelection<User>();
+					newItem.Item = arrayElemenet;
+					result.Add(newItem);
+				}
+				var page = new PeopleInvitationStatusPage(result.ToArray(), Constants.GroupId);
+				Navigation.PushAsync(page);
+			}
 		}
 
 		public InvitePeopleToGroup()

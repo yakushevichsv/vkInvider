@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="VKPeopleInviter.PeopleInvitationStatusPage" xmlns:c="clr-namespace:VKPeopleInviter.Controls" Title="Check status of invitation">
+	<ContentPage.Content>
+		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" >
+	<ListView IsPullToRefreshEnabled="True"  x:Name="PeopleListView" ItemAppearing="Handle_ItemAppearing" ItemDisappearing="Handle_ItemDisappearing">
+      <ListView.ItemTemplate>
+        <DataTemplate>
+		 <c:UserGroupSelectableCell FullName="{Binding Item.FullName}" ImageSource="{Binding Item.PictureSource}" Selected="{Binding Selected, Mode = TwoWay}" GroupMemberStatus ="{Binding Status, Mode = TwoWay}"  >
+						</c:UserGroupSelectableCell>
+        </DataTemplate>
+      </ListView.ItemTemplate>
+    </ListView>
+			<Button Text="Invite to group" x:Name="SendButton" IsVisible="false"/>
+  </StackLayout>
+	</ContentPage.Content>
+</ContentPage>

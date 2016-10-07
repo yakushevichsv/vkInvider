@@ -67,6 +67,9 @@ namespace VKPeopleInviter.Controls
 		Label lblFullName, lblFriendShip;
 		Image ivPicture, ivSelected;
 
+		protected StackLayout contentLayout { set; get;}
+		protected RelativeLayout relativeLayout { set; get;}
+
 		static ImageSource sCheckedImageSource = ImageSource.FromResource("VKPeopleInviter.Resources.checked.png");
 		static ImageSource sUnckeckedImageSource = ImageSource.FromResource("VKPeopleInviter.Resources.checkbox.png");
 
@@ -102,8 +105,8 @@ namespace VKPeopleInviter.Controls
 			mainSwitch.SetBinding(Switch.IsToggledProperty, new Binding("Selected"));
 
 
-			StackLayout cellWrapper = new StackLayout();
-			StackLayout contentLayout = new StackLayout();
+			RelativeLayout cellWrapper = new RelativeLayout();
+			contentLayout = new StackLayout();
 			contentLayout.Orientation = StackOrientation.Horizontal;
 
 			contentLayout.Children.Add(lblFullName);
@@ -112,11 +115,24 @@ namespace VKPeopleInviter.Controls
 			ivSelected.IsVisible = false;
 			contentLayout.Children.Add(ivSelected);
 			contentLayout.Children.Add(mainSwitch);
-			cellWrapper.Children.Add(contentLayout);
+
+			cellWrapper.Children.Add(contentLayout,
+				Constraint.Constant(0),
+			                         Constraint.Constant(0),
+				Constraint.RelativeToParent((parent) =>
+					{
+						return parent.Width;
+					}),
+				Constraint.RelativeToParent((parent) =>
+					{
+				return parent.Height;
+					})
+			);
 
 			cellWrapper.HeightRequest = ivPicture.HeightRequest + 2;
 
 			this.View = cellWrapper;
+			this.relativeLayout = cellWrapper;
 		}
 
 		static FriendShipStatus ConvertToFriendShipFromObject(object ojb)

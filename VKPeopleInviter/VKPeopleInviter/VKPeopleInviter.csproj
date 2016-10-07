@@ -54,6 +54,10 @@
     <Compile Include="Models\Constants.cs" />
     <Compile Include="Models\City.cs" />
     <Compile Include="Models\ResponseCities.cs" />
+    <Compile Include="PeopleInvitationStatusPage.xaml.cs">
+      <DependentUpon>PeopleInvitationStatusPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Cells\UserGroupSelectableCell.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="ModernDev.InTouch, Version=1.0.14.0, Culture=neutral, processorArchitecture=MSIL">
@@ -107,6 +111,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\checkbox.png" />
     <EmbeddedResource Include="Resources\checked.png" />
+    <EmbeddedResource Include="PeopleInvitationStatusPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Models\MultipleSelection\" />

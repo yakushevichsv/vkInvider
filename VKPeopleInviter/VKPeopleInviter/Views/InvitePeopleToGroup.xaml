@@ -2,7 +2,7 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="VKPeopleInviter.InvitePeopleToGroup" xmlns:c="clr-namespace:VKPeopleInviter.Controls"	Title="Invite People to group">
 <ContentPage.ToolbarItems>
 	<ToolbarItem Name="Select All" x:Name="LeftNavButton"/>
-	<ToolbarItem Name="Next" x:Name="RightNavButton"/>
+	<ToolbarItem Name="Next" x:Name="RightNavButton" Clicked="HandleNextToolBarClicked"/>
 </ContentPage.ToolbarItems>
 	<ContentPage.Content>
 		<RelativeLayout>

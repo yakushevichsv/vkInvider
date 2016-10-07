@@ -209,7 +209,8 @@ namespace VKPeopleInviter
 
 					foreach (JToken jToken in resultObj)
 					{
-						if (jToken.Type == JTokenType.Property) {
+						if (jToken.Type == JTokenType.Property)
+						{
 							var property = (JProperty)jToken;
 							if (property.Name == "response")
 							{
@@ -232,9 +233,9 @@ namespace VKPeopleInviter
 									var errorCode = obj["error_code"].Value<int>();
 									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
 
-									#if DEBUG
-									 	errorMsg += "Code " + errorCode;
-									#endif
+#if DEBUG
+									errorMsg += "Code " + errorCode;
+#endif
 									throw new VKOperationException(errorMsg);
 								}
 							}
@@ -245,19 +246,154 @@ namespace VKPeopleInviter
 			}
 			return null;
 		}
+
+		//MARK: Group methods..
+
+		public enum UserGroupStatus  { None, Member, Invited, Requested, Failed };
+
+		string groupMemberAPIKey
+		{
+			get { return "https://api.vk.com/method/groups.isMember?"; }
+		}
+
+		public bool CancelIsAGroupMemberDetection(string[] userIDs, string groupId)
+		{
+			if (userIDs.Length == 0)
+				return false;
+
+			var query = GetGroupDetectionTemplate(userIDs, groupId);
+
+			return !((query == null) || CancelSearchPeople(query) == null);
+		}
+
+		private string GetGroupDetectionTemplate(string[] userIDs, string groupId)
+		{
+
+			if (userIDs.Length == 0)
+				return null;
+
+			string resultIDs = "";
+
+			foreach (string userId in userIDs)
+			{
+				if (resultIDs.Length != 0)
+					resultIDs = String.Concat(resultIDs, ",");
+				resultIDs = String.Concat(resultIDs, userId);
+			}
+
+			string parameters = "group_id=" + groupId + "&user_ids=" + resultIDs + "&extended=1";
+			string templatekey = groupMemberAPIKey + parameters;
+
+			return templatekey;
+		}
+
+		public async Task<UserGroupStatus[]> DetectIfUserIsAGroupMember(string[] userIDs, string groupId)
+		{
+
+			string token = VKPeopleInviter.App.User.Token;
+			var templateKey = GetGroupDetectionTemplate(userIDs, groupId);
+			if (templateKey == null)
+				return null;
+
+			string template = templateKey + "&access_token=" + token;
+
+
+			CancelSearchPeople(templateKey);
+
+			using (var client = new HttpClient())
+			{
+
+				CancellationTokenSource tokenSource = new CancellationTokenSource();
+				cacheMap[templateKey] = tokenSource;
+
+				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
+
+				CancelSearchPeople(templateKey);
+				if (response.IsSuccessStatusCode)
+				{
+					var content = response.Content;
+					Debug.WriteLine("Content " + content);
+
+					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
+					var result = JObject.Parse(jsonString);
+
+					var resultObj = result.AsJEnumerable().AsEnumerable();
+					var statuses = new List<UserGroupStatus>();
+
+					foreach (JToken jToken in resultObj)
+					{
+						if (jToken.Type == JTokenType.Property)
+						{
+							var property = (JProperty)jToken;
+							if (property.Name == "response")
+							{
+								var value = property.Value;
+								if (value.Type == JTokenType.Array)
+								{
+									var array = (JArray)value;
+
+									foreach (var element in array)
+									{
+										var eObj = (JObject)element;
+
+										if (eObj.Type == JTokenType.Object)
+										{
+											JToken tempToken;
+
+											UserGroupStatus status = UserGroupStatus.None;
+
+											if (eObj.TryGetValue("member", out tempToken) && tempToken.Value<bool>())
+												status = UserGroupStatus.Member;
+											else
+											{
+												if (eObj.TryGetValue("request", out tempToken) && tempToken.Value<bool>()) {
+													status = UserGroupStatus.Requested;
+												}
+												else if (eObj.TryGetValue("invitation", out tempToken) && tempToken.Value<bool>()) {
+													status = UserGroupStatus.Invited;
+												}
+											}
+
+
+											statuses.Add(status);
+										}
+									}
+								}
+							}
+							else if (property.Name == "error")
+							{
+								var value = property.Value;
+
+								if (value.Type == JTokenType.Object)
+								{
+									var obj = (JObject)value;
+
+									var errorMsg = obj["error_msg"].Value<string>();
+									var errorCode = obj["error_code"].Value<int>();
+									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
+
+#if DEBUG
+									errorMsg += " Code " + errorCode;
+#endif
+									throw new VKOperationException(errorMsg);
+								}
+							}
+						}
+					}
+					return statuses.ToArray();
+				}
+			}
+			return null;
+		}
 	}
-}
 
+	sealed class UsersNotFoundException : Exception
+	{
+		public UsersNotFoundException(string message) : base(message) { }
+	}
 
-
-sealed class UsersNotFoundException : Exception
-{
-	public UsersNotFoundException(string message) : base(message) { }
-}
-
-sealed class VKOperationException : Exception
-{
-	public VKOperationException(string message) : base(message) { }
-
-
+	sealed class VKOperationException : Exception
+	{
+		public VKOperationException(string message) : base(message) { }
+	}
 }
