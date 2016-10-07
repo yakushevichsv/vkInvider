@@ -60,7 +60,7 @@ namespace VKPeopleInviter.Controls
 		ActivityIndicator aiIndicator;
 
 
-		public UserGroupSelectableCell() : base()
+		public UserGroupSelectableCell() : base(false)
 		{
 			lblGroupStatus = new Label() { HorizontalOptions = LayoutOptions.Center };
 			lblGroupStatus.FontAttributes = FontAttributes.None;

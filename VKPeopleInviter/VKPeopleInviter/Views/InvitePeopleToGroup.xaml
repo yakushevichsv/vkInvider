@@ -14,7 +14,7 @@
 	<ListView IsPullToRefreshEnabled="True" Refreshing="Handle_Refreshing" ItemSelected="Handle_ItemSelected" x:Name="PeopleListView" ItemAppearing="Handle_ItemAppearing">
       <ListView.ItemTemplate>
         <DataTemplate>
-		 <c:UserSelectableCell FullName="{Binding Item.FullName}" ImageSource="{Binding Item.PictureSource}" Selected="{Binding Selected, Mode = TwoWay}">
+		 <c:UserSelectableCell ClickListener="Handle_ClickListener" FullName="{Binding Item.FullName}" ImageSource="{Binding Item.PictureSource}" Selected="{Binding Selected, Mode = TwoWay}">
 						</c:UserSelectableCell>
         </DataTemplate>
       </ListView.ItemTemplate>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Xamarin.Forms;
 using System.Linq;
+using VKPeopleInviter.Controls;
 
 namespace VKPeopleInviter
 {
@@ -34,6 +35,7 @@ namespace VKPeopleInviter
 			SearchPeople.TextColor = Color.Black;
 		}
 
+
 		void Handle_ItemSelected(object sender, Xamarin.Forms.SelectedItemChangedEventArgs e)
 		{
 			if (e.SelectedItem == null)
@@ -55,6 +57,12 @@ namespace VKPeopleInviter
 			SendButton.IsVisible = GetSelection().Count != 0;
 			((ListView)sender).SelectedItem = null;
 		}
+
+		void Handle_ItemTapped(object sender, Xamarin.Forms.ItemTappedEventArgs e)
+		{
+			Handle_ItemSelected(sender, new SelectedItemChangedEventArgs(e.Item));
+		}
+
 
 
 		public List<User> GetSelection()
@@ -231,7 +239,7 @@ namespace VKPeopleInviter
 			SearchPrivate(this.searchText, offset, count);
 		}
 
-		void HandleNextToolBarClicked(object sender, System.EventArgs e)
+		void HandleNextToolBarClicked(object sender, EventArgs e)
 		{
 			var list = GetSelection();
 			if (list.Count != 0)
@@ -250,9 +258,11 @@ namespace VKPeopleInviter
 		public InvitePeopleToGroup()
 		{
 			InitializeComponent();
+		}
 
-			//StackLayout layout = new StackLayout();
-			//layout.WidthRequest
+		void Handle_ClickListener(UserSelectableCell m, EventArgs e)
+		{
+			SendButton.IsVisible = GetSelection().Count != 0;
 		}
 	}
 }

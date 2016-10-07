@@ -9,7 +9,8 @@ public enum FriendShipStatus
 	Followed,
 	Blocked, // he is blocked
 	Blocking,
-	Friend
+	Friend,
+	Failed
 };
 
 namespace VKPeopleInviter.Controls
@@ -17,16 +18,16 @@ namespace VKPeopleInviter.Controls
 	public class UserSelectableCell : ViewCell
 	{
 		public static readonly BindableProperty FullNameProperty =
-			BindableProperty.Create("FullName", typeof(String), typeof(UserSelectableCell), String.Empty);
+			BindableProperty.Create("FullName", typeof(string), typeof(UserSelectableCell), String.Empty, BindingMode.TwoWay);
 
 		public static readonly BindableProperty ImageSourceProperty =
-			BindableProperty.Create("ImageSource", typeof(ImageSource), typeof(UserSelectableCell), null);
+			BindableProperty.Create("ImageSource", typeof(ImageSource), typeof(UserSelectableCell), null , BindingMode.TwoWay);
 
 		public static readonly BindableProperty FriendshipStatusProperty =
-			BindableProperty.Create("FriendShipStatus", typeof(FriendShipStatus), typeof(UserSelectableCell), FriendShipStatus.None);
+			BindableProperty.Create("FriendShipStatus", typeof(FriendShipStatus), typeof(UserSelectableCell), FriendShipStatus.None , BindingMode.TwoWay);
 
 		public static readonly BindableProperty SelectedProperty =
-			BindableProperty.Create("Selected", typeof(bool), typeof(UserSelectableCell), false);
+			BindableProperty.Create("Selected", typeof(bool), typeof(UserSelectableCell), false, BindingMode.TwoWay);
 
 		public string FullName
 		{
@@ -86,7 +87,13 @@ namespace VKPeopleInviter.Controls
 			}
 		}
 
-		public UserSelectableCell() : base()
+		public EventArgs e = null;
+		public event ButtonClickEvent ClickListener;
+		public delegate void ButtonClickEvent(UserSelectableCell m, EventArgs e);
+
+		public UserSelectableCell() : this(true) { }
+
+		public UserSelectableCell(bool displaySwitch) : base()
 		{
 			lblFullName = new Label() { HorizontalOptions = LayoutOptions.StartAndExpand };
 			ivPicture = new Image() { Aspect = Aspect.AspectFit };
@@ -95,14 +102,8 @@ namespace VKPeopleInviter.Controls
 			ivSelected = new Image() { Aspect = Aspect.AspectFit };
 			ivSelected.HeightRequest = 16;
 
-			//var aiIndicator = new ActivityIndicator();
-			//aiIndicator.IsRunning = false;
 
-			this.SetBinding(SelectedProperty, new Binding("Selected"));
-
-
-			Switch mainSwitch = new Switch();
-			mainSwitch.SetBinding(Switch.IsToggledProperty, new Binding("Selected"));
+			this.SetBinding(SelectedProperty, new Binding("Selected"){ Mode = BindingMode.TwoWay });
 
 
 			RelativeLayout cellWrapper = new RelativeLayout();
@@ -114,7 +115,22 @@ namespace VKPeopleInviter.Controls
 			contentLayout.Children.Add(lblFriendShip);
 			ivSelected.IsVisible = false;
 			contentLayout.Children.Add(ivSelected);
-			contentLayout.Children.Add(mainSwitch);
+
+
+			if (displaySwitch)
+			{
+				Switch mainSwitch = new Switch();
+				mainSwitch.SetBinding(Switch.IsToggledProperty, new Binding("Selected") { Mode = BindingMode.TwoWay });
+
+				mainSwitch.Toggled += (sender, e) =>
+				{
+					bool selected = e.Value;
+					Selected = selected;
+					if (ClickListener != null)
+						ClickListener(this, e);
+				};
+				contentLayout.Children.Add(mainSwitch);
+			}
 
 			cellWrapper.Children.Add(contentLayout,
 				Constraint.Constant(0),
@@ -159,6 +175,19 @@ namespace VKPeopleInviter.Controls
 				lblFullName.Text = FullName;
 				ivPicture.Source = ImageSource;
 				ivSelected.Source = Selected ? sCheckedImageSource : sUnckeckedImageSource;
+
+				var obj = BindingContext as MultipleItemSelectlon<User>;
+				if (obj != null)
+				{
+					obj.PropertyChanged += (sender, e) =>
+					{
+						var senderObj = sender as MultipleItemSelectlon<User>;
+						if (e.PropertyName == "Selected")
+						{
+							Selected = senderObj.Selected;
+						}
+					};
+				}
 			}
 		}
 	}
