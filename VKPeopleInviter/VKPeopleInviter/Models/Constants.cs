@@ -13,7 +13,6 @@ namespace VKPeopleInviter
 		public static string InvitationTemplateKey = "InvitationTemplateKey";
 
 		// OAuth
-		// For Google login, configure at https://console.developers.google.com/
 		public static string ClientId = "5537512";
 		public static string ClientSecret = "E9x6ywxHcYnnqf3ZXtjd";
 

@@ -132,6 +132,7 @@
   <ItemGroup>
     <ProjectReference Include="..\VKPeopleInviter\VKPeopleInviter.csproj">
       <Name>VKPeopleInviter</Name>
+      <Project>{5DF2A1FA-9C7E-49BF-A6B0-A3E4AF81207B}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
