@@ -13,8 +13,8 @@ namespace VKPeopleInviter
 		public static string InvitationTemplateKey = "InvitationTemplateKey";
 
 		// OAuth
-		public static string ClientId = "125537512";
-		public static string ClientSecret = "KaE9x6ywxHcYnnqf3ZXtjd";
+		public static string ClientId = "5537512";
+		public static string ClientSecret = "E9x6ywxHcYnnqf3ZXtjd";
 
 		public static string GroupId = "100802490";
 
