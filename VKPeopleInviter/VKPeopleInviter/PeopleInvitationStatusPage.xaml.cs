@@ -216,7 +216,7 @@ namespace VKPeopleInviter
 		private async Task DetectGroupStatusForUsers(GroupMemberItem[] users)
 		{
 			Debug.WriteLine("DetectGroupStatusForUsers");
-			VKManager.UserGroupStatus[] statuses = new VKManager.UserGroupStatus[users.Length];
+			VKManager.UserGroupStatus[] statuses = null;
 
 			try
 			{
@@ -241,7 +241,10 @@ namespace VKPeopleInviter
 					var i = 0;
 					foreach (var user in users)
 					{
-						user.Status = statuses.Length != 0 ? statuses[i] : VKManager.UserGroupStatus.Failed;
+						var status = statuses!= null ? statuses[i] : VKManager.UserGroupStatus.Failed;
+						if (status == VKManager.UserGroupStatus.None)
+							status = VKManager.UserGroupStatus.Failed;
+						user.Status = status;
 						i++;
 					}
 				});

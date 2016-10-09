@@ -35,6 +35,30 @@ namespace VKPeopleInviter
 			SearchPeople.TextColor = Color.Black;
 		}
 
+		void Handle_SelectUnSelectAll(object sender, System.EventArgs e)
+		{
+			var item = (ToolbarItem)sender;
+			bool select = item.Text.StartsWith("Select",StringComparison.OrdinalIgnoreCase);
+			ChangeSelectionState(select);
+
+			if (!select)
+				item.Text = "Select All";
+			else
+				item.Text = " Unselect All";
+		}
+
+		private void ChangeSelectionState(bool selected)
+		{
+			var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
+
+			if (source == null)
+				return;
+
+			foreach (var item in source)
+				item.Selected = selected;
+
+			SendButton.IsVisible = GetSelection().Count != 0;
+		}
 
 		void Handle_ItemSelected(object sender, Xamarin.Forms.SelectedItemChangedEventArgs e)
 		{
