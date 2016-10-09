@@ -33,6 +33,7 @@ namespace VKPeopleInviter
 			{
 				doneOnce = true;
 				PeopleListView.ItemsSource = m_Users;
+				SendButton.IsVisible = m_Users.Length != 0;
 				m_Users = null;
 			}
 		}
@@ -82,52 +83,53 @@ namespace VKPeopleInviter
 				return;
 			}
 
-			m_CancelOpt = new ToolbarItem("Cancel",null,Handle_CancelOperation,ToolbarItemOrder.Primary);
+			m_CancelOpt = new ToolbarItem("Cancel", null, Handle_CancelOperation, ToolbarItemOrder.Primary);
 			ToolbarItems.Add(m_CancelOpt);
 
-				if (!PeopleListView.IsRefreshing)
-					PeopleListView.BeginRefresh();
+			if (!PeopleListView.IsRefreshing)
+				PeopleListView.BeginRefresh();
 
 			var tasks = new List<Task>(1);//new List<Task>(failedItems.Count);
 
-				var cancellationTokenSource = new CancellationTokenSource();
-				m_RefreshTokenSource = cancellationTokenSource;
+			var cancellationTokenSource = new CancellationTokenSource();
+			m_RefreshTokenSource = cancellationTokenSource;
 
-				Task.Factory.StartNew((arg) => {
+			Task.Factory.StartNew((arg) =>
+			{
 
-					try
-					{
+				try
+				{
 					tasks.Add(DetectGroupStatusForUsers(failedItems.ToArray()));
-						
-						/*foreach (var item in failedItems)
-						{
-							tasks.Add(this.HandleRowWithUserAppear(item));
-						}*/
-						Task.WaitAll(tasks.ToArray());
-					}
-					catch (Exception exp)
-					{
-						Debug.WriteLine("Invitation Status Handle reflection Error\n " + exp);
-					var canceled = exp is AggregateException
-						Device.BeginInvokeOnMainThread(() =>
-							{
-								foreach (var item in failedItems)
-								{
-									if (item.isDetecting)
-										item.Status = canceled ? VKManager.UserGroupStatus.Cancelled : VKManager.UserGroupStatus.Failed;
-								}
-							});
-						
-					}
-					finally
-					{
-						Device.BeginInvokeOnMainThread(() =>
-						{
-							TerminateRefreshing();
-						});
-					}
 
-				} ,cancellationTokenSource.Token);
+					/*foreach (var item in failedItems)
+					{
+						tasks.Add(this.HandleRowWithUserAppear(item));
+					}*/
+					Task.WaitAll(tasks.ToArray());
+				}
+				catch (Exception exp)
+				{
+					Debug.WriteLine("Invitation Status Handle reflection Error\n " + exp);
+					var canceled = exp is AggregateException;
+					Device.BeginInvokeOnMainThread(() =>
+						{
+							foreach (var item in failedItems)
+							{
+								if (item.isDetecting)
+									item.Status = canceled ? VKManager.UserGroupStatus.Cancelled : VKManager.UserGroupStatus.Failed;
+							}
+						});
+
+				}
+				finally
+				{
+					Device.BeginInvokeOnMainThread(() =>
+					{
+						TerminateRefreshing();
+					});
+				}
+
+			}, cancellationTokenSource.Token);
 
 		}
 
@@ -146,6 +148,52 @@ namespace VKPeopleInviter
 				m_RefreshTokenSource = null;
 				if (ToolbarItems.Count != 0)
 					ToolbarItems.RemoveAt(0);
+			}
+		}
+
+		#endregion
+
+		#region Group Invitation
+
+		async void Handle_InviteToGroup(object sender, System.EventArgs e)
+		{
+			if (!SendButton.IsEnabled)
+				return;
+
+			SendButton.IsEnabled = false;
+
+			Debug.WriteLine("Inviting to group method");
+
+			//TODO: Add some activity indicator view..
+
+			foreach (var item in PeopleListView.ItemsSource)
+			{
+				var groupMemberItem = item as GroupMemberItem;
+
+				//groupMemberItem.Status = 
+				Debug.WriteLine("Inviting user to the group with id " + groupMemberItem.Item.Id);
+				try
+				{
+
+					var result = await vkManager.InviteUserToAGroup(groupMemberItem.Item.Id, this.groupId);
+					groupMemberItem.Status = result == 1 ? VKManager.UserGroupStatus.Invited : VKManager.UserGroupStatus.Failed;
+					Debug.WriteLine("Status of user with id " + groupMemberItem.Item.Id + " invitation " + groupMemberItem.Status);
+
+				}
+				catch (Exception exp)
+				{
+					Debug.WriteLine("Invitation Exception " + exp);
+					var cancelled = exp is OperationCanceledException;
+
+					if (groupMemberItem.Status != VKManager.UserGroupStatus.Invited)
+						groupMemberItem.Status = cancelled ? VKManager.UserGroupStatus.Cancelled : VKManager.UserGroupStatus.Failed;
+
+					if (cancelled)
+						break;
+					//TODO: analyze error...
+				}
+
+				SendButton.IsEnabled = true;
 			}
 		}
 
@@ -188,7 +236,8 @@ namespace VKPeopleInviter
 			}
 			finally
 			{
-				Device.BeginInvokeOnMainThread(() => {
+				Device.BeginInvokeOnMainThread(() =>
+				{
 					var i = 0;
 					foreach (var user in users)
 					{

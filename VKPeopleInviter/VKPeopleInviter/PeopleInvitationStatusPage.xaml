@@ -10,7 +10,7 @@
         </DataTemplate>
       </ListView.ItemTemplate>
     </ListView>
-			<Button Text="Invite to group" x:Name="SendButton" IsVisible="false"/>
+			<Button Text="Invite to group" x:Name="SendButton" IsVisible="true" Clicked="Handle_InviteToGroup"/>
   </StackLayout>
 	</ContentPage.Content>
 </ContentPage>

@@ -257,6 +257,11 @@ namespace VKPeopleInviter
 			get { return "https://api.vk.com/method/groups.isMember?"; }
 		}
 
+		string groupInviteAPIKey
+		{
+			get {return "https://api.vk.com/method/groups.invite?"; }
+		}
+
 		public bool CancelIsAGroupMemberDetection(string[] userIDs, string groupId)
 		{
 			if (userIDs.Length == 0)
@@ -288,10 +293,81 @@ namespace VKPeopleInviter
 			return templatekey;
 		}
 
+		public async Task<int> InviteUserToAGroup(string userId, string groupId)
+		{
+			string token = App.User.Token;
+
+			string parameters = "group_id=" + groupId + "&user_id=" + userId;
+			var groupInviteTemplateKey = groupInviteAPIKey + parameters;
+			var groupInvite = groupInviteTemplateKey + "&access_token=" + token;
+			CancelSearchPeople(groupInviteTemplateKey);
+
+			using (var client = new HttpClient())
+			{
+
+				CancellationTokenSource tokenSource = new CancellationTokenSource();
+				cacheMap[groupInviteTemplateKey] = tokenSource;
+
+				var response = await client.GetAsync(groupInvite, tokenSource.Token).ConfigureAwait(false);
+
+				CancelSearchPeople(groupInviteTemplateKey);
+				if (response.IsSuccessStatusCode)
+				{
+					var content = response.Content;
+					Debug.WriteLine("Content " + content);
+
+					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
+					var result = JObject.Parse(jsonString);
+
+					var resultObj = result.AsJEnumerable().AsEnumerable();
+					var statuses = new List<UserGroupStatus>();
+
+					foreach (JToken jToken in resultObj)
+					{
+						if (jToken.Type == JTokenType.Property)
+						{
+							var property = (JProperty)jToken;
+							if (property.Name == "response")
+							{
+								var value = property.Value;
+								if (value.Type == JTokenType.Integer)
+								{
+									var obj = (JObject)value;
+
+									return obj.Value<int>();
+								}
+								return 0;
+							}
+							else if (property.Name == "error")
+							{
+								var value = property.Value;
+
+								if (value.Type == JTokenType.Object)
+								{
+									var obj = (JObject)value;
+
+									var errorMsg = obj["error_msg"].Value<string>();
+									var errorCode = obj["error_code"].Value<int>();
+									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
+
+#if DEBUG
+									errorMsg += " Code " + errorCode;
+#endif
+									throw new VKOperationException(errorMsg);
+								}
+							}
+						}
+					}
+					return 0;
+				}
+			}
+			return 0;
+		}
+
 		public async Task<UserGroupStatus[]> DetectIfUserIsAGroupMember(string[] userIDs, string groupId)
 		{
 
-			string token = VKPeopleInviter.App.User.Token;
+			string token = App.User.Token;
 			var templateKey = GetGroupDetectionTemplate(userIDs, groupId);
 			if (templateKey == null)
 				return null;
