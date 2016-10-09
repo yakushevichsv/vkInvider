@@ -249,7 +249,8 @@ namespace VKPeopleInviter
 
 		//MARK: Group methods..
 
-		public enum UserGroupStatus  { None, Member, Invited, Requested, Failed };
+		public enum UserGroupStatus  {  None, Detecting,  Member, Invited, Requested, Failed, Cancelled, CanBeInvited };
+
 
 		string groupMemberAPIKey
 		{
@@ -340,7 +341,7 @@ namespace VKPeopleInviter
 										{
 											JToken tempToken;
 
-											UserGroupStatus status = UserGroupStatus.None;
+											UserGroupStatus status = UserGroupStatus.CanBeInvited;
 
 											if (eObj.TryGetValue("member", out tempToken) && tempToken.Value<bool>())
 												status = UserGroupStatus.Member;
@@ -352,6 +353,7 @@ namespace VKPeopleInviter
 												else if (eObj.TryGetValue("invitation", out tempToken) && tempToken.Value<bool>()) {
 													status = UserGroupStatus.Invited;
 												}
+
 											}
 
 

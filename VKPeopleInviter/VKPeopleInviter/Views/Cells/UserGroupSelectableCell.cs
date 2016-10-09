@@ -34,7 +34,7 @@ namespace VKPeopleInviter.Controls
 		private void PerformGroupMemberStatusChange()
 		{
 			IsDetectingGroupMemberStatus = GroupMemberStatus != VKManager.UserGroupStatus.None;
-			lblGroupStatus.Text = IsDetectingGroupMemberStatus ? GroupMemberStatus.ToString() : "Can be invited!";
+			lblGroupStatus.Text = GroupMemberStatus.ToString();
 		}
 
 		public bool IsDetectingGroupMemberStatus
@@ -117,12 +117,11 @@ namespace VKPeopleInviter.Controls
 							if (e.PropertyName == "Status")
 							{
 								this.GroupMemberStatus = obj.Status;
+								this.IsDetectingGroupMemberStatus = obj.isDetecting;
+								if (this.IsDetectingGroupMemberStatus)
+									PerformIsDetectingGroupStatusChange();
+								
 								PerformGroupMemberStatusChange();
-							}
-							else if (e.PropertyName == "DetectingStatus")
-							{
-								this.IsDetectingGroupMemberStatus = obj.isDetectingStatus;
-								PerformIsDetectingGroupStatusChange();
 							}
 						};
 					}

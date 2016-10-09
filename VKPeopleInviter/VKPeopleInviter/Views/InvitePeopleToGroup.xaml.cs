@@ -68,6 +68,8 @@ namespace VKPeopleInviter
 		public List<User> GetSelection()
 		{
 			var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
+			if (source == null)
+				return new List<User>();
 			var result = source.Where(item => item.Selected).Select(wrappedItem => wrappedItem.Item).ToList();
 			return result;
 		}

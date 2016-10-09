@@ -35,21 +35,6 @@ namespace VKPeopleInviter
 	{
 		VKManager.UserGroupStatus m_Status = VKManager.UserGroupStatus.None;
 
-		bool m_isDetectingStatus;
-
-		public bool isDetectingStatus
-		{
-			get
-			{
-				return m_isDetectingStatus;
-			}
-			set
-			{
-				m_isDetectingStatus = value;
-				NotifyAboutPropertyChange("DetectingStatus");
-			}
-		}
-
 		public VKManager.UserGroupStatus Status
 		{
 			get
@@ -60,6 +45,31 @@ namespace VKPeopleInviter
 			{
 				m_Status = value;
 				NotifyAboutPropertyChange("Status");
+			}
+		}
+
+		public bool isDetectionNeeded
+		{
+			get
+			{
+				return !isDetecting && (isFailed || m_Status == VKManager.UserGroupStatus.Cancelled || m_Status == VKManager.UserGroupStatus.None);
+			}
+		}
+
+		public bool isDetecting
+		{
+			get
+			{
+				return m_Status == VKManager.UserGroupStatus.Detecting;
+			}
+		}
+
+
+		public bool isFailed
+		{
+			get
+			{
+				return m_Status == VKManager.UserGroupStatus.Failed; 
 			}
 		}
 	}
