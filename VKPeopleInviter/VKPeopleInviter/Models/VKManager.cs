@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ModernDev;
-using ModernDev.InTouch;
 using System.Diagnostics;
 using System.Net.Http;
 using Newtonsoft.Json;
@@ -14,11 +12,8 @@ using System.Threading;
 
 namespace VKPeopleInviter
 {
-	public sealed class VKManager
+	public sealed partial class VKManager
 	{
-		private int clientId = 5537512;
-		private string clientSecretToken = "E9x6ywxHcYnnqf3ZXtjd";
-
 		private Dictionary<string, CancellationTokenSource> cacheMap = new Dictionary<string, CancellationTokenSource>();
 
 		private static VKManager s_sharedInstance = new VKManager();
@@ -28,35 +23,9 @@ namespace VKPeopleInviter
 			return s_sharedInstance;
 		}
 
-		private InTouch client { get; set; }
-		private VKManager()
-		{
-			client = new InTouch(true, true);//new InTouch(false, true);
-			client.SetApplicationSettings(clientId, clientSecretToken);
-		}
+		private VKManager() {}
 
-		private void Client_CaptchaNeeded(object sender, ResponseError e)
-		{
-			Debug.WriteLine(e.Message);
-		}
-
-		private void Client_AuthorizationFailed(object sender, ResponseError e)
-		{
-			Debug.WriteLine(e.Message);
-		}
-
-		public void didAuthorizeWithToken(String token, int userId, int duration)
-		{
-			if (duration != 0)
-			{
-				client.SetSessionData(token, userId, duration);
-			}
-			else {
-				client.SetSessionData(token, userId);
-			}
-
-		}
-
+		//TODO: rename this method...
 		public CancellationTokenSource CancelSearchPeople(string query, bool cancel = true)
 		{
 			if (cacheMap.ContainsKey(query))
@@ -78,6 +47,11 @@ namespace VKPeopleInviter
 		string cityInfoAPIKey
 		{
 			get { return "https://api.vk.com/method/database.getCities?"; }
+		}
+
+		string FriendshipStatusAPIKey
+		{
+			get { return "https://api.vk.com/method/friends.areFriends?"; }
 		}
 
 		public async Task<List<City>> ReceiveCities(string query, int country_id, int region_id, int count = 1)
@@ -121,6 +95,130 @@ namespace VKPeopleInviter
 				}
 			}
 			return new List<City>();
+		}
+
+		string FriendshipKey(string[] userIDs)
+		{
+			if (userIDs.Length == 0)
+				return null;
+
+			string resultIDs = "";
+
+			foreach (string tempId in userIDs)
+			{
+				if (resultIDs.Length != 0)
+					resultIDs = string.Concat(resultIDs, ",");
+				resultIDs = string.Concat(resultIDs, tempId);
+			}
+
+			string parameters = "user_ids=" + resultIDs;
+			string templateKey = FriendshipStatusAPIKey + parameters;
+
+			return templateKey;
+		}
+
+		public bool CancelFriendshipDetection(string[] userIDs)
+		{
+			string templateKey = FriendshipKey(userIDs);
+
+			if (templateKey == null)
+				return false;
+
+			return CancelSearchPeople(templateKey) != null;
+		}
+
+		public async Task<Dictionary<string, FriendshipStatus>> DetectFriendshipStatusWithUsers(string[] userIDs)
+		{
+			string templateKey = FriendshipKey(userIDs);
+
+			if (templateKey == null)
+				return null;
+			
+			String token = App.User.Token;
+
+			string template = templateKey + "&access_token=" + token;
+
+			CancelSearchPeople(templateKey);
+
+			using (var client = new HttpClient())
+			{
+				CancellationTokenSource tokenSource = new CancellationTokenSource();
+				cacheMap[templateKey] = tokenSource;
+
+				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
+				CancelSearchPeople(templateKey);
+				if (response.IsSuccessStatusCode)
+				{
+					var content = response.Content;
+
+					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
+					var result = JObject.Parse(jsonString);
+
+					var resultObj = result.AsJEnumerable().AsEnumerable();
+					var dicIDs = new Dictionary<string, FriendshipStatus>();
+
+					foreach (JToken jToken in resultObj)
+					{
+						if (jToken.Type == JTokenType.Property)
+						{
+							var property = (JProperty)jToken;
+							if (property.Name == "response")
+							{
+								var value = property.Value;
+								if (value.Type == JTokenType.Array)
+								{
+									var array = (JArray)value;
+
+									foreach (var element in array)
+									{
+										var eObj = (JObject)element;
+
+										if (eObj.Type == JTokenType.Object)
+										{
+											JToken tempToken;
+
+											string fUserId = null;
+											var fStatus = FriendshipStatus.NotAFriend;
+
+											if (eObj.TryGetValue("uid", out tempToken)) //uid
+												fUserId = tempToken.Value<string>();
+											else {
+												Debug.Assert(userIDs.Length == 1,"Not a one element in array");
+												fUserId = userIDs.Last();
+											}
+
+											if (!(eObj.TryGetValue("friend_status", out tempToken) && Enum.TryParse(tempToken.Value<string>(), out fStatus))) 
+												continue;
+											
+											dicIDs[fUserId] = fStatus;
+										}
+									}
+								}
+							}
+							else if (property.Name == "error")
+							{
+								var value = property.Value;
+
+								if (value.Type == JTokenType.Object)
+								{
+									var obj = (JObject)value;
+
+									var errorMsg = obj["error_msg"].Value<string>();
+									var errorCode = obj["error_code"].Value<int>();
+									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
+
+#if DEBUG
+									errorMsg += " Code " + errorCode;
+#endif
+									throw new VKOperationException(errorCode, errorMsg);
+								}
+							}
+						}
+					}
+					return dicIDs;
+				}
+			}
+			return null;
 		}
 
 
@@ -189,7 +287,7 @@ namespace VKPeopleInviter
 				resultIDs = String.Concat(resultIDs, userId);
 			}
 
-			String token = this.client.Session.AccessToken;
+			String token = App.User.Token;
 			string parameters = "user_ids=" + resultIDs + "&message=" + WebUtility.UrlEncode(message);
 
 			String template = "https://api.vk.com/method/messages.send?" + parameters + "&access_token=" + token;
@@ -236,7 +334,7 @@ namespace VKPeopleInviter
 #if DEBUG
 									errorMsg += "Code " + errorCode;
 #endif
-									throw new VKOperationException(errorMsg);
+									throw new VKOperationException(errorCode, errorMsg);
 								}
 							}
 						}
@@ -248,9 +346,6 @@ namespace VKPeopleInviter
 		}
 
 		//MARK: Group methods..
-
-		public enum UserGroupStatus  {  None, Detecting,  Member, Invited, Requested, Failed, Cancelled, CanBeInvited };
-
 
 		string groupMemberAPIKey
 		{
@@ -353,7 +448,7 @@ namespace VKPeopleInviter
 #if DEBUG
 									errorMsg += " Code " + errorCode;
 #endif
-									throw new VKOperationException(errorMsg);
+									throw new VKOperationException(errorCode, errorMsg);
 								}
 							}
 						}
@@ -453,7 +548,7 @@ namespace VKPeopleInviter
 #if DEBUG
 									errorMsg += " Code " + errorCode;
 #endif
-									throw new VKOperationException(errorMsg);
+									throw new VKOperationException(errorCode, errorMsg);
 								}
 							}
 						}
@@ -465,6 +560,92 @@ namespace VKPeopleInviter
 		}
 	}
 
+	#region Public Enum
+
+	public partial class VKManager
+	{
+		public enum FriendshipStatus
+		{
+			NotAFriend,
+			SendFriendRequest,
+			ReceivedFriendRequest,
+			MutualFriend
+		};
+
+		public enum UserGroupStatus { 
+			CanBeInvited, 
+			Detecting, 
+			Member, 
+			Invited, 
+			Requested, 
+			Failed, 
+			Cancelled 
+		};
+
+		public enum ErrorCodeStatus
+		{
+			TooManyRequests = 6 //Too many requests per second 
+		};
+	}
+
+	public static class VKManageExtension
+	{
+		public static string ToString(this VKManager.FriendshipStatus status)
+		{
+			string result = null;
+			switch (status)
+			{
+				case VKManager.FriendshipStatus.NotAFriend:
+					result = "Not a Friend";
+					break;
+				case VKManager.FriendshipStatus.SendFriendRequest:
+					result = "Friend request was sent";
+					break;
+				case VKManager.FriendshipStatus.ReceivedFriendRequest:
+					result = "Received friend request";
+					break;
+				default:
+					Debug.Assert(status == VKManager.FriendshipStatus.MutualFriend);
+					result = "Your friend";
+					break;
+			}
+			return result;
+		}
+
+		public static string ToString(this VKManager.UserGroupStatus status)
+		{
+			string result = null;
+			switch (status)
+			{
+				case VKManager.UserGroupStatus.CanBeInvited:
+					result = "Can be invited";
+					break;
+				case VKManager.UserGroupStatus.Cancelled:
+					result = "Cancelled";
+					break;
+				case VKManager.UserGroupStatus.Detecting:
+					result = "Detecting";
+					break;
+				case VKManager.UserGroupStatus.Failed:
+					result = "Failed";
+					break;
+				case VKManager.UserGroupStatus.Invited:
+					result = "Invited";
+					break;
+				case VKManager.UserGroupStatus.Requested:
+					result = "Requested";
+					break;
+				default:
+					Debug.Assert(status == VKManager.UserGroupStatus.Member);
+					result = "Member";
+					break;
+			}
+			return result;
+		}
+	}
+
+	#endregion
+
 	sealed class UsersNotFoundException : Exception
 	{
 		public UsersNotFoundException(string message) : base(message) { }
@@ -472,6 +653,8 @@ namespace VKPeopleInviter
 
 	sealed class VKOperationException : Exception
 	{
-		public VKOperationException(string message) : base(message) { }
+		public int ErrorCode { get; private set;}
+		
+		public VKOperationException(int code, string message) : base(message)  { ErrorCode = code; }
 	}
 }

@@ -14,19 +14,51 @@ namespace VKPeopleInviter
 		private int offset = 0;
 		bool cancelSearch = false;
 		const int c_OrigCount = 8;
+		//const int c_BulkCount = 20;
+		//private List<string> idsToAsk = new List<string>();
+		private VKManager vkManager = VKManager.sharedInstance();
 
-		void Handle_ItemAppearing(object sender, Xamarin.Forms.ItemVisibilityEventArgs e)
+		async void Handle_ItemAppearing(object sender, ItemVisibilityEventArgs e)
 		{
+			var ItemWrapper = (MultipleItemSelectlon<User>)e.Item;
+			var id = ItemWrapper.Item.Id;
+			var source = (List<MultipleItemSelectlon<User>>)((ListView)sender).ItemsSource;
+			try
+			{
+				Debug.WriteLine("DetectFriendshipStatusWithUsers");
+				var result = await vkManager.DetectFriendshipStatusWithUsers(new string[] { id }); //TODO: perform request in a group..
+				Debug.WriteLine("DetectFriendshipStatusWithUsers finished with result " + result);
 
-			var source = (List<VKPeopleInviter.MultipleItemSelectlon<User>>)((ListView)sender).ItemsSource;
-
-			var Item = (MultipleItemSelectlon<User>)e.Item;
+				foreach (var keyPair in result)
+				{
+					var fWrapper =  source.Find((item) => item.Item.Id == keyPair.Key);
+					if (fWrapper == null)
+						continue;
+					Debug.WriteLine("DetectFriendshipStatusWithUsers Detected status for item " + fWrapper.Item + "\n Status " + keyPair.Value);
+				}
+			}
+			catch (Exception exp)
+			{
+				var vkExp = exp as VKOperationException;
+				if (vkExp != null)
+				{
+					if ( vkExp.ErrorCode)
+				}
+				Debug.WriteLine("DetectFriendshipStatusWithUsers Detect friendship state " + exp);
+			}
 
 
 			var isLast = source.Count != 0 && (source[source.Count - 1].Item.Id).Equals(((MultipleItemSelectlon<User>)e.Item).Item.Id);
 
 			if (isLast)
 				SearchPrivate(searchText, count + offset, 100);
+		}
+
+		void Handle_ItemDisappearing(object sender, ItemVisibilityEventArgs e)
+		{
+			var ItemWrapper = (MultipleItemSelectlon<User>)e.Item;
+			var id = ItemWrapper.Item.Id;
+			vkManager.CancelFriendshipDetection(new string[] { id });
 		}
 
 		protected override void OnAppearing()
@@ -140,7 +172,7 @@ namespace VKPeopleInviter
 			{
 				cancelSearch = true;
 				((SearchBar)sender).Text = sText;
-				VKManager.sharedInstance().CancelSearchPeople(sText);
+				vkManager.CancelSearchPeople(sText);
 				PeopleListView.EndRefresh();
 
 				return;
@@ -150,7 +182,7 @@ namespace VKPeopleInviter
 			if (sText != text && sText != null && sText.Length != 0)
 			{
 
-				VKManager.sharedInstance().CancelSearchPeople(sText);
+				vkManager.CancelSearchPeople(sText);
 				PeopleListView.EndRefresh();
 				offset = 0;
 				count = 0;
@@ -188,7 +220,7 @@ namespace VKPeopleInviter
 				try
 				{
 					int cityCode = 5835; // Rechica...
-					var result = await VKManager.sharedInstance().SearchPeople(text, cityCode, offset2, count2);
+					var result = await vkManager.SearchPeople(text, cityCode, offset2, count2);
 					var finalResult = new List<MultipleItemSelectlon<User>>();
 
 					this.searchText = text;
@@ -244,7 +276,7 @@ namespace VKPeopleInviter
 				Debug.WriteLine("Handle_SendClicked");
 				var ids = GetSelection().Select(item => item.Id).ToArray();
 				var settingsManager = new SettingsManager(Application.Current);
-				await VKManager.sharedInstance().SendMessageToUsers(settingsManager.InvitationText, ids);
+				await vkManager.SendMessageToUsers(settingsManager.InvitationText, ids);
 				//analayze results of sending...
 				await DisplayAlert("Success", "All users were notified", "OK");
 				Debug.WriteLine("Success", "All users were notified");

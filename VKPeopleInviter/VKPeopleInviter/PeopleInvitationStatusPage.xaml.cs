@@ -242,8 +242,6 @@ namespace VKPeopleInviter
 					foreach (var user in users)
 					{
 						var status = statuses!= null ? statuses[i] : VKManager.UserGroupStatus.Failed;
-						if (status == VKManager.UserGroupStatus.None)
-							status = VKManager.UserGroupStatus.Failed;
 						user.Status = status;
 						i++;
 					}

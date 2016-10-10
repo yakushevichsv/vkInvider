@@ -33,7 +33,7 @@ namespace VKPeopleInviter
 
 	public class GroupDetectionMultipleItemSelection<T> : MultipleItemSelectlon<T>
 	{
-		VKManager.UserGroupStatus m_Status = VKManager.UserGroupStatus.None;
+		VKManager.UserGroupStatus m_Status = VKManager.UserGroupStatus.Cancelled;
 
 		public VKManager.UserGroupStatus Status
 		{
@@ -52,7 +52,15 @@ namespace VKPeopleInviter
 		{
 			get
 			{
-				return !isDetecting && (isFailed || m_Status == VKManager.UserGroupStatus.Cancelled || m_Status == VKManager.UserGroupStatus.None);
+				return !isDetecting && (isFailed || isCancelled);
+			}
+		}
+
+		public bool isCancelled
+		{
+			get
+			{
+				return m_Status == VKManager.UserGroupStatus.Cancelled;
 			}
 		}
 

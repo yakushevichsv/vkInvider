@@ -3,14 +3,13 @@ using System.Diagnostics;
 using VKPeopleInviter.Controls;
 using Xamarin.Forms;
 
-public enum UserGroupStatus { None, Member, Invited, Requested };
 
 namespace VKPeopleInviter.Controls
 {
 	public class UserGroupSelectableCell : UserSelectableCell
 	{
 		public static readonly BindableProperty GroupMemberStatusProperty =
-			BindableProperty.Create("GroupMemberStatus", typeof(VKManager.UserGroupStatus), typeof(UserGroupSelectableCell), VKManager.UserGroupStatus.None, BindingMode.TwoWay);
+			BindableProperty.Create("GroupMemberStatus", typeof(VKManager.UserGroupStatus), typeof(UserGroupSelectableCell), VKManager.UserGroupStatus.Failed, BindingMode.TwoWay);
 
 		public static readonly BindableProperty IsDetectingGroupMemberProperty =
 			BindableProperty.Create("IsDetectingGroupMemberStatus", typeof(bool), typeof(UserGroupSelectableCell), false, BindingMode.TwoWay);
@@ -33,7 +32,7 @@ namespace VKPeopleInviter.Controls
 
 		private void PerformGroupMemberStatusChange()
 		{
-			IsDetectingGroupMemberStatus = GroupMemberStatus != VKManager.UserGroupStatus.None;
+			IsDetectingGroupMemberStatus = GroupMemberStatus == VKManager.UserGroupStatus.Detecting;
 			lblGroupStatus.Text = GroupMemberStatus.ToString();
 		}
 

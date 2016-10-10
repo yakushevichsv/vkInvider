@@ -81,8 +81,6 @@ namespace VKPeopleInviter.iOS
 						diff = spanDiff.TotalSeconds;
 						if (diff > 0.0 && !forced)
 						{
-							VKManager.sharedInstance().didAuthorizeWithToken(tokenString, (int)Convert.ToInt64(userId), (int)diff);
-
 							App.User.FirstName = results.First();
 							App.User.LastName = results.Last();
 							App.User.ExpirationDate = expirationDate;
@@ -129,8 +127,6 @@ namespace VKPeopleInviter.iOS
 				dic["user_ids"] = userId;
 
 				dic["fields"] = "uid,first_name,last_name,sex,photo_100";
-
-				VKManager.sharedInstance().didAuthorizeWithToken(token, (int)Convert.ToInt64(userId), (int)duration);
 
 				var request = new OAuth2Request("GET", new Uri(Constants.UserInfoUrl), dic, e.Account);
 				var response = await request.GetResponseAsync();
