@@ -174,15 +174,21 @@ namespace VKPeopleInviter
 				Debug.WriteLine("Inviting user to the group with id " + groupMemberItem.Item.Id);
 				try
 				{
-
 					var result = await vkManager.InviteUserToAGroup(groupMemberItem.Item.Id, this.groupId);
 					groupMemberItem.Status = result == 1 ? VKManager.UserGroupStatus.Invited : VKManager.UserGroupStatus.Failed;
 					Debug.WriteLine("Status of user with id " + groupMemberItem.Item.Id + " invitation " + groupMemberItem.Status);
+
+					if (result == 0)
+					{
+						var friendStatus = await SendFriendRequest(groupMemberItem.Item);
+						//Debug.WriteLine("Send Request result " + friendStatus);
+					}
 
 				}
 				catch (Exception exp)
 				{
 					Debug.WriteLine("Invitation Exception " + exp);
+					var vkOperation = exp as VKOperationException;
 					var cancelled = exp is OperationCanceledException;
 
 					if (groupMemberItem.Status != VKManager.UserGroupStatus.Invited)
@@ -190,10 +196,36 @@ namespace VKPeopleInviter
 
 					if (cancelled)
 						break;
-					//TODO: analyze error...
+					else if (vkOperation != null)
+					{
+						
+							if (vkOperation.ErrorStatusCode == VKOperationException.ErrorCodeStatus.AccessDenied)
+							{
+								var friendStatus = await SendFriendRequest(groupMemberItem.Item);
+								//Debug.WriteLine("Send Request result " + friendStatus);
+							}
+							else
+								Debug.WriteLine(" Int value " + vkOperation.ErrorStatusCode);
+					}
 				}
 
 				SendButton.IsEnabled = true;
+			}
+		}
+
+		private async Task<VKManager.FriendAddStatus> SendFriendRequest(User user)
+		{
+			try
+			{
+				Debug.WriteLine("SendFriendRequest for user " + user);
+				var result = await vkManager.CreateOrApproveFriendRequest(user.Id);
+				Debug.WriteLine("Send Request result " + result);
+				return result;
+			}
+			catch (Exception exp)
+			{
+				Debug.WriteLine("SendFriendRequest Exception " + exp);
+				return VKManager.FriendAddStatus.FriendRequestNone;
 			}
 		}
 
@@ -241,7 +273,7 @@ namespace VKPeopleInviter
 					var i = 0;
 					foreach (var user in users)
 					{
-						var status = statuses!= null ? statuses[i] : VKManager.UserGroupStatus.Failed;
+						var status = (statuses != null && statuses.Length != 0) ? statuses[i] : VKManager.UserGroupStatus.Failed;
 						user.Status = status;
 						i++;
 					}

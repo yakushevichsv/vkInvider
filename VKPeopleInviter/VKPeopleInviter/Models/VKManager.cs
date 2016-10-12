@@ -369,7 +369,6 @@ namespace VKPeopleInviter
 
 		private string GetGroupDetectionTemplate(string[] userIDs, string groupId)
 		{
-
 			if (userIDs.Length == 0)
 				return null;
 
@@ -382,10 +381,26 @@ namespace VKPeopleInviter
 				resultIDs = String.Concat(resultIDs, userId);
 			}
 
-			string parameters = "group_id=" + groupId + "&user_ids=" + resultIDs + "&extended=1";
+			string userIDName = userIDs.Length == 1 ? "user_id" : "user_ids";
+
+			string parameters = "group_id=" + groupId + "&" + userIDName + "=" + resultIDs + "&extended=1";
 			string templatekey = groupMemberAPIKey + parameters;
 
 			return templatekey;
+		}
+
+		string addOrCreateFriendRequestAPIKey
+		{
+			get { return "https://api.vk.com/method/friends.add?"; }
+		}
+
+		private string GetAddOrCreateFriendRequestTemplate(string userId)
+		{
+			if (String.IsNullOrEmpty(userId)) return null;
+
+			string parameters = "user_id=" + userId;
+			string templateKey = addOrCreateFriendRequestAPIKey + parameters;
+			return templateKey;
 		}
 
 		public async Task<int> InviteUserToAGroup(string userId, string groupId)
@@ -457,6 +472,83 @@ namespace VKPeopleInviter
 				}
 			}
 			return 0;
+		}
+
+		public async Task<FriendAddStatus> CreateOrApproveFriendRequest(string userId, string text = null, int? follow = null)
+		{
+			Debug.Assert(!string.IsNullOrEmpty(userId));
+			var templateKey = GetAddOrCreateFriendRequestTemplate(userId);
+			if (templateKey == null) return FriendAddStatus.FriendRequestNone;
+
+			string token = App.User.Token;
+			string template = templateKey;
+
+			CancelSearchPeople(templateKey);
+
+			if (!string.IsNullOrEmpty(text))
+				template += "&text=" + text;
+
+			if (follow.HasValue)
+				template += "&follow=" + follow.Value;
+
+			template += "&access_token=" + token;
+
+
+			using (var client = new HttpClient())
+			{
+
+				CancellationTokenSource tokenSource = new CancellationTokenSource();
+				cacheMap[templateKey] = tokenSource;
+
+				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
+				CancelSearchPeople(templateKey);
+				if (response.IsSuccessStatusCode)
+				{
+					var content = response.Content;
+
+					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
+					var result = JObject.Parse(jsonString);
+
+					var resultObj = result.AsJEnumerable().AsEnumerable();
+					var retStatus = FriendAddStatus.FriendRequestNone;
+
+					foreach (JToken jToken in resultObj)
+					{
+						if (jToken.Type == JTokenType.Property)
+						{
+							var property = (JProperty)jToken;
+							if (property.Name == "response")
+							{
+								var value = property.Value;
+								if (value.Type == JTokenType.Integer)
+								{
+									if (Enum.TryParse(value.ToString(), out retStatus))
+										return retStatus;
+								}
+							}
+							else if (property.Name == "error")
+							{
+								var value = property.Value;
+
+								if (value.Type == JTokenType.Object)
+								{
+									var obj = (JObject)value;
+
+									var errorMsg = obj["error_msg"].Value<string>();
+									var errorCode = obj["error_code"].Value<int>();
+									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
+
+#if DEBUG
+									errorMsg += " Code " + errorCode;
+#endif
+									throw new VKOperationException(errorCode, errorMsg);
+								}
+							}
+						}
+					}
+				}
+				return FriendAddStatus.FriendRequestNone;
+			}
 		}
 
 		public async Task<UserGroupStatus[]> DetectIfUserIsAGroupMember(string[] userIDs, string groupId)
@@ -532,6 +624,30 @@ namespace VKPeopleInviter
 										}
 									}
 								}
+								else if (value.Type == JTokenType.Object)
+								{
+									JToken tempToken;
+									var eObj = (JObject)value;
+									UserGroupStatus status = UserGroupStatus.CanBeInvited;
+
+									if (eObj.TryGetValue("member", out tempToken) && tempToken.Value<bool>())
+										status = UserGroupStatus.Member;
+									else
+									{
+										if (eObj.TryGetValue("request", out tempToken) && tempToken.Value<bool>())
+										{
+											status = UserGroupStatus.Requested;
+										}
+										else if (eObj.TryGetValue("invitation", out tempToken) && tempToken.Value<bool>())
+										{
+											status = UserGroupStatus.Invited;
+										}
+
+									}
+
+
+									statuses.Add(status);
+								}
 							}
 							else if (property.Name == "error")
 							{
@@ -582,10 +698,15 @@ namespace VKPeopleInviter
 			Cancelled 
 		};
 
-		public enum ErrorCodeStatus
+		public enum FriendAddStatus
 		{
-			TooManyRequests = 6 //Too many requests per second 
+			FriendRequestNone = VKManager.None,
+			FriendRequestSent = 1,
+			FriendRequestFromUserApproved = 2,
+			FriendRequestResending = 4
 		};
+
+		public const int None = 0;
 	}
 
 	public static class VKManageExtension
@@ -651,10 +772,30 @@ namespace VKPeopleInviter
 		public UsersNotFoundException(string message) : base(message) { }
 	}
 
-	sealed class VKOperationException : Exception
+	 public sealed partial class VKOperationException : Exception
 	{
 		public int ErrorCode { get; private set;}
 		
 		public VKOperationException(int code, string message) : base(message)  { ErrorCode = code; }
+
+		public ErrorCodeStatus ErrorStatusCode
+		{
+			get
+			{
+				if (Enum.IsDefined(typeof(ErrorCodeStatus), ErrorCode))
+					return (ErrorCodeStatus)ErrorCode;
+				return ErrorCodeStatus.None;
+			}
+		}
+	}
+
+	partial class VKOperationException
+	{
+		public enum ErrorCodeStatus
+		{
+			None = VKManager.None,
+			TooManyRequests = 6, //Too many requests per second
+			AccessDenied = 15
+		};
 	}
 }
