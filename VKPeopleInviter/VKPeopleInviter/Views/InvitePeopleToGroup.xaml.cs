@@ -42,7 +42,10 @@ namespace VKPeopleInviter
 				var vkExp = exp as VKOperationException;
 				if (vkExp != null)
 				{
-					if ( vkExp.ErrorCode)
+					if (vkExp.ErrorCode)
+					{
+					
+					}
 				}
 				Debug.WriteLine("DetectFriendshipStatusWithUsers Detect friendship state " + exp);
 			}
