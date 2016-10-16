@@ -23,7 +23,7 @@ namespace VKPeopleInviter
 			return s_sharedInstance;
 		}
 
-		private VKManager() {}
+		private VKManager() { }
 
 		//TODO: rename this method...
 		public CancellationTokenSource CancelSearchPeople(string query, bool cancel = true)
@@ -39,20 +39,47 @@ namespace VKPeopleInviter
 			return null;
 		}
 
-		string cancelSearchAPIKey
+		#region VK Methods' keys
+
+		static string BasicAPIURL
 		{
-			get { return "https://api.vk.com/method/users.search?"; }
+			get { return "https://api.vk.com/method/"; }
 		}
 
-		string cityInfoAPIKey
+		static string FormatVKMethodKey(string entityToChange, string methodName)
 		{
-			get { return "https://api.vk.com/method/database.getCities?"; }
+			Debug.Assert(!string.IsNullOrEmpty(entityToChange) && !string.IsNullOrEmpty(methodName));
+			return FormatVKMethodKey(entityToChange + "." + methodName);
+		}
+
+
+		static string FormatVKMethodKey(string jointMethodName)
+		{
+			Debug.Assert(jointMethodName.Contains("."));
+			return BasicAPIURL + jointMethodName + "?";
+		}
+
+		string CancelSearchAPIKey
+		{
+			get { return FormatVKMethodKey("users", "search"); }
+		}
+
+		string CityInfoAPIKey
+		{
+			get { return FormatVKMethodKey("database", "getCities"); }
 		}
 
 		string FriendshipStatusAPIKey
 		{
-			get { return "https://api.vk.com/method/friends.areFriends?"; }
+			get { return FormatVKMethodKey("friends", "areFriends"); }
 		}
+
+		string GroupsMembersKey
+		{
+			get { return FormatVKMethodKey("groups", "getMembers"); }
+		}
+
+		#endregion
 
 		public async Task<List<City>> ReceiveCities(string query, int country_id, int region_id, int count = 1)
 		{
@@ -60,19 +87,19 @@ namespace VKPeopleInviter
 
 			string parameters = "q=" + query + "&region=" + region_id + "&country=" + country_id + "&offset=" + 0 + "&count=" + count + "&need_all=" + 1;
 
-			string templatePart = cityInfoAPIKey + parameters;
+			string templatePart = CityInfoAPIKey + parameters;
 			string template = templatePart + "&access_token=" + token;
 
-			CancelSearchPeople(cityInfoAPIKey);
+			CancelSearchPeople(CityInfoAPIKey);
 
 			using (var client = new HttpClient())
 			{
 
 				CancellationTokenSource tokenSource = new CancellationTokenSource();
-				cacheMap[cityInfoAPIKey] = tokenSource;
+				cacheMap[CityInfoAPIKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
-				var retTokenSource = CancelSearchPeople(cityInfoAPIKey);
+				var retTokenSource = CancelSearchPeople(CityInfoAPIKey);
 				if (response.IsSuccessStatusCode && !(retTokenSource == null || retTokenSource.IsCancellationRequested))
 				{
 					var content = response.Content;
@@ -133,7 +160,7 @@ namespace VKPeopleInviter
 
 			if (templateKey == null)
 				return null;
-			
+
 			String token = App.User.Token;
 
 			string template = templateKey + "&access_token=" + token;
@@ -183,13 +210,13 @@ namespace VKPeopleInviter
 											if (eObj.TryGetValue("uid", out tempToken)) //uid
 												fUserId = tempToken.Value<string>();
 											else {
-												Debug.Assert(userIDs.Length == 1,"Not a one element in array");
+												Debug.Assert(userIDs.Length == 1, "Not a one element in array");
 												fUserId = userIDs.Last();
 											}
 
-											if (!(eObj.TryGetValue("friend_status", out tempToken) && Enum.TryParse(tempToken.Value<string>(), out fStatus))) 
+											if (!(eObj.TryGetValue("friend_status", out tempToken) && Enum.TryParse(tempToken.Value<string>(), out fStatus)))
 												continue;
-											
+
 											dicIDs[fUserId] = fStatus;
 										}
 									}
@@ -230,16 +257,16 @@ namespace VKPeopleInviter
 			string token = App.User.Token;
 
 			string parameters = "q=" + query + "&sort=1&fields=photo_100,uid,first_name,last_name" + "&sex=1&age_from=19&age_to=34" + "&country=3&city=" + cityCode + "&offset=" + offset + "&count=" + count;
-			string templatePart = cancelSearchAPIKey + parameters;
+			string templatePart = CancelSearchAPIKey + parameters;
 			string template = templatePart + "&access_token=" + token;
 
-			CancelSearchPeople(cancelSearchAPIKey);
+			CancelSearchPeople(CancelSearchAPIKey);
 
 			using (var client = new HttpClient())
 			{
 
 				CancellationTokenSource tokenSource = new CancellationTokenSource();
-				cacheMap[cancelSearchAPIKey] = tokenSource;
+				cacheMap[CancelSearchAPIKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
 				if (response.IsSuccessStatusCode)
@@ -247,7 +274,7 @@ namespace VKPeopleInviter
 					var content = response.Content;
 
 					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
-					CancelSearchPeople(cancelSearchAPIKey, false);
+					CancelSearchPeople(CancelSearchAPIKey, false);
 
 					var index = jsonString.IndexOf('{');
 					jsonString = jsonString.Substring(index + 1);
@@ -266,7 +293,7 @@ namespace VKPeopleInviter
 					var responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(finalString);
 					return new List<User>(responseUsers.users);
 				}
-				CancelSearchPeople(cancelSearchAPIKey, false);
+				CancelSearchPeople(CancelSearchAPIKey, false);
 			}
 			return new List<User>();
 		}
@@ -354,7 +381,7 @@ namespace VKPeopleInviter
 
 		string groupInviteAPIKey
 		{
-			get {return "https://api.vk.com/method/groups.invite?"; }
+			get { return "https://api.vk.com/method/groups.invite?"; }
 		}
 
 		public bool CancelIsAGroupMemberDetection(string[] userIDs, string groupId)
@@ -610,10 +637,12 @@ namespace VKPeopleInviter
 												status = UserGroupStatus.Member;
 											else
 											{
-												if (eObj.TryGetValue("request", out tempToken) && tempToken.Value<bool>()) {
+												if (eObj.TryGetValue("request", out tempToken) && tempToken.Value<bool>())
+												{
 													status = UserGroupStatus.Requested;
 												}
-												else if (eObj.TryGetValue("invitation", out tempToken) && tempToken.Value<bool>()) {
+												else if (eObj.TryGetValue("invitation", out tempToken) && tempToken.Value<bool>())
+												{
 													status = UserGroupStatus.Invited;
 												}
 
@@ -688,14 +717,15 @@ namespace VKPeopleInviter
 			MutualFriend
 		};
 
-		public enum UserGroupStatus { 
-			CanBeInvited, 
-			Detecting, 
-			Member, 
-			Invited, 
-			Requested, 
-			Failed, 
-			Cancelled 
+		public enum UserGroupStatus
+		{
+			CanBeInvited,
+			Detecting,
+			Member,
+			Invited,
+			Requested,
+			Failed,
+			Cancelled
 		};
 
 		public enum FriendAddStatus
@@ -772,11 +802,11 @@ namespace VKPeopleInviter
 		public UsersNotFoundException(string message) : base(message) { }
 	}
 
-	 public sealed partial class VKOperationException : Exception
+	public sealed partial class VKOperationException : Exception
 	{
-		public int ErrorCode { get; private set;}
-		
-		public VKOperationException(int code, string message) : base(message)  { ErrorCode = code; }
+		public int ErrorCode { get; private set; }
+
+		public VKOperationException(int code, string message) : base(message) { ErrorCode = code; }
 
 		public ErrorCodeStatus ErrorStatusCode
 		{
