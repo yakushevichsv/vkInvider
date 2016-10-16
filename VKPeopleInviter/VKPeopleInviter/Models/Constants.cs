@@ -16,6 +16,9 @@ namespace VKPeopleInviter
 		public static string ClientId = "5537512";
 		public static string ClientSecret = "E9x6ywxHcYnnqf3ZXtjd";
 
+		public static string Group1ToUseId = "72566211";
+		public static string CityCodeId = " ";
+
 		public static string GroupId = "100802490";
 
 		// These values do not need changing
@@ -26,5 +29,13 @@ namespace VKPeopleInviter
 
 		// Set this property to the location the user will be redirected too after successfully authenticating
 		public static string RedirectUrl = "https://oauth.vk.com/blank.html";
+
+		public static string[] ExternalGroupdIds
+		{
+			get
+			{
+				return new string[] { Group1ToUseId };
+			}
+		}
 	}
 }

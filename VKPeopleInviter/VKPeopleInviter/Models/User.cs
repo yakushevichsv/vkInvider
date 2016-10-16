@@ -16,11 +16,14 @@ namespace VKPeopleInviter
 		[JsonProperty ("last_name")]
 		public string LastName { get; set; }
      
-		[JsonProperty ("photo_100")]
+		[JsonProperty ("photo_100", DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string Picture { get; set; }
 
-		[JsonProperty ("sex")]
+		[JsonProperty ("sex", DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string Gender { get; set; }
+
+		[JsonProperty("can_write_private_message")]
+		public bool CanWritePrivateMessage { get; set;}
 
 		[JsonIgnore]
 		public ImageSource PictureSource

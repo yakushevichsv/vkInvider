@@ -23,15 +23,15 @@ namespace VKPeopleInviter
 			return s_sharedInstance;
 		}
 
-		private VKManager() { }
+		VKManager() { }
 
-		//TODO: rename this method...
-		public CancellationTokenSource CancelSearchPeople(string query, bool cancel = true)
+
+		public CancellationTokenSource CancelOperation(string key, bool cancel = true)
 		{
-			if (cacheMap.ContainsKey(query))
+			if (cacheMap.ContainsKey(key))
 			{
-				var cancelSource = cacheMap[query];
-				cacheMap.Remove(query);
+				var cancelSource = cacheMap[key];
+				cacheMap.Remove(key);
 				if (cancel)
 					cancelSource.Cancel();
 				return cancelSource;
@@ -59,7 +59,7 @@ namespace VKPeopleInviter
 			return BasicAPIURL + jointMethodName + "?";
 		}
 
-		string CancelSearchAPIKey
+		string UsersSearchAPIKey
 		{
 			get { return FormatVKMethodKey("users", "search"); }
 		}
@@ -79,6 +79,11 @@ namespace VKPeopleInviter
 			get { return FormatVKMethodKey("groups", "getMembers"); }
 		}
 
+		string AddOrCreateFriendRequestAPIKey
+		{
+			get { return FormatVKMethodKey("friends", "add"); }
+		}
+
 		#endregion
 
 		public async Task<List<City>> ReceiveCities(string query, int country_id, int region_id, int count = 1)
@@ -90,7 +95,7 @@ namespace VKPeopleInviter
 			string templatePart = CityInfoAPIKey + parameters;
 			string template = templatePart + "&access_token=" + token;
 
-			CancelSearchPeople(CityInfoAPIKey);
+			CancelOperation(CityInfoAPIKey);
 
 			using (var client = new HttpClient())
 			{
@@ -99,7 +104,7 @@ namespace VKPeopleInviter
 				cacheMap[CityInfoAPIKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
-				var retTokenSource = CancelSearchPeople(CityInfoAPIKey);
+				var retTokenSource = CancelOperation(CityInfoAPIKey);
 				if (response.IsSuccessStatusCode && !(retTokenSource == null || retTokenSource.IsCancellationRequested))
 				{
 					var content = response.Content;
@@ -151,7 +156,7 @@ namespace VKPeopleInviter
 			if (templateKey == null)
 				return false;
 
-			return CancelSearchPeople(templateKey) != null;
+			return CancelOperation(templateKey) != null;
 		}
 
 		public async Task<Dictionary<string, FriendshipStatus>> DetectFriendshipStatusWithUsers(string[] userIDs)
@@ -165,7 +170,7 @@ namespace VKPeopleInviter
 
 			string template = templateKey + "&access_token=" + token;
 
-			CancelSearchPeople(templateKey);
+			CancelOperation(templateKey);
 
 			using (var client = new HttpClient())
 			{
@@ -173,7 +178,7 @@ namespace VKPeopleInviter
 				cacheMap[templateKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
-				CancelSearchPeople(templateKey);
+				CancelOperation(templateKey);
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;
@@ -256,17 +261,17 @@ namespace VKPeopleInviter
 			//String template = "https://api.vk.com/method/METHOD_NAME?PARAMETERS&access_token=ACCESS_TOKEN"
 			string token = App.User.Token;
 
-			string parameters = "q=" + query + "&sort=1&fields=photo_100,uid,first_name,last_name" + "&sex=1&age_from=19&age_to=34" + "&country=3&city=" + cityCode + "&offset=" + offset + "&count=" + count;
-			string templatePart = CancelSearchAPIKey + parameters;
+			string parameters = "q=" + query + "&sort=1&fields=photo_100,uid,first_name,last_name,can_write_private_message" + "&sex=1&age_from=19&age_to=34" + "&country=3&city=" + cityCode + "&offset=" + offset + "&count=" + count;
+			string templatePart = UsersSearchAPIKey + parameters;
 			string template = templatePart + "&access_token=" + token;
 
-			CancelSearchPeople(CancelSearchAPIKey);
+			CancelOperation(UsersSearchAPIKey);
 
 			using (var client = new HttpClient())
 			{
 
 				CancellationTokenSource tokenSource = new CancellationTokenSource();
-				cacheMap[CancelSearchAPIKey] = tokenSource;
+				cacheMap[UsersSearchAPIKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
 				if (response.IsSuccessStatusCode)
@@ -274,7 +279,7 @@ namespace VKPeopleInviter
 					var content = response.Content;
 
 					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
-					CancelSearchPeople(CancelSearchAPIKey, false);
+					CancelOperation(UsersSearchAPIKey, false);
 
 					var index = jsonString.IndexOf('{');
 					jsonString = jsonString.Substring(index + 1);
@@ -293,7 +298,7 @@ namespace VKPeopleInviter
 					var responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(finalString);
 					return new List<User>(responseUsers.users);
 				}
-				CancelSearchPeople(CancelSearchAPIKey, false);
+				CancelOperation(UsersSearchAPIKey, false);
 			}
 			return new List<User>();
 		}
@@ -391,7 +396,7 @@ namespace VKPeopleInviter
 
 			var query = GetGroupDetectionTemplate(userIDs, groupId);
 
-			return !((query == null) || CancelSearchPeople(query) == null);
+			return !((query == null) || CancelOperation(query) == null);
 		}
 
 		private string GetGroupDetectionTemplate(string[] userIDs, string groupId)
@@ -416,17 +421,12 @@ namespace VKPeopleInviter
 			return templatekey;
 		}
 
-		string addOrCreateFriendRequestAPIKey
-		{
-			get { return "https://api.vk.com/method/friends.add?"; }
-		}
-
 		private string GetAddOrCreateFriendRequestTemplate(string userId)
 		{
 			if (String.IsNullOrEmpty(userId)) return null;
 
 			string parameters = "user_id=" + userId;
-			string templateKey = addOrCreateFriendRequestAPIKey + parameters;
+			string templateKey = AddOrCreateFriendRequestAPIKey + parameters;
 			return templateKey;
 		}
 
@@ -437,7 +437,7 @@ namespace VKPeopleInviter
 			string parameters = "group_id=" + groupId + "&user_id=" + userId;
 			var groupInviteTemplateKey = groupInviteAPIKey + parameters;
 			var groupInvite = groupInviteTemplateKey + "&access_token=" + token;
-			CancelSearchPeople(groupInviteTemplateKey);
+			CancelOperation(groupInviteTemplateKey);
 
 			using (var client = new HttpClient())
 			{
@@ -447,7 +447,7 @@ namespace VKPeopleInviter
 
 				var response = await client.GetAsync(groupInvite, tokenSource.Token).ConfigureAwait(false);
 
-				CancelSearchPeople(groupInviteTemplateKey);
+				CancelOperation(groupInviteTemplateKey);
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;
@@ -510,7 +510,7 @@ namespace VKPeopleInviter
 			string token = App.User.Token;
 			string template = templateKey;
 
-			CancelSearchPeople(templateKey);
+			CancelOperation(templateKey);
 
 			if (!string.IsNullOrEmpty(text))
 				template += "&text=" + text;
@@ -528,7 +528,7 @@ namespace VKPeopleInviter
 				cacheMap[templateKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
-				CancelSearchPeople(templateKey);
+				CancelOperation(templateKey);
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;
@@ -589,7 +589,7 @@ namespace VKPeopleInviter
 			string template = templateKey + "&access_token=" + token;
 
 
-			CancelSearchPeople(templateKey);
+			CancelOperation(templateKey);
 
 			using (var client = new HttpClient())
 			{
@@ -599,7 +599,7 @@ namespace VKPeopleInviter
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
 
-				CancelSearchPeople(templateKey);
+				CancelOperation(templateKey);
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;
@@ -703,6 +703,102 @@ namespace VKPeopleInviter
 			}
 			return null;
 		}
+
+		#region Groups Methods
+
+
+
+
+		/// <summary>
+		/// Method for receiving information about group members.
+		/// </summary>
+		/// <returns>Returns count & users ids, or User object if fields where provided.</returns>
+		/// <param name="groupId">Id of the group</param>
+		/// <param name="offset">Offset from the beggining to search</param>
+		/// <param name="count">Number of returned items, 1000 by default</param>
+		/// <param name="sort">If set to <c>true</c> sort. in ascending.</param>
+		/// <param name="fields">Extra fields to return <list type="string"> <item>can_write_private_message</item> </list> </param>
+		public async Task<TotalListOfUsers> GroupsGetMembers(string groupId, int offset = 0, int count = 1000, bool sort = true, string[] fields = null)
+		{
+			string token = App.User.Token;
+
+			List<string> eFields = null;
+
+			if (fields == null || fields.Length == 0)
+				eFields = new List<string>() { "first_name", "last_name", "photo_100", "uid", "can_write_private_message" };
+			else
+				eFields = new List<string>(fields);
+
+			var resultFields = "";
+
+			foreach (string tempId in eFields)
+			{
+				if (resultFields.Length != 0)
+					resultFields = string.Concat(tempId, ",");
+				resultFields = string.Concat(resultFields, tempId);
+			}
+
+			string parameters = "group_id=" + groupId + "&sort=" + (sort == true ? "id_asc" : "id_desc")  +"&fields=" + resultFields +  "&offset=" + offset + "&count=" + count;
+			string templatePart = GroupsMembersKey + parameters;
+			string template = templatePart + "&access_token=" + token;
+
+			CancelOperation(GroupsMembersKey);
+
+			using (var client = new HttpClient())
+			{
+				CancellationTokenSource tokenSource = new CancellationTokenSource();
+				cacheMap[GroupsMembersKey] = tokenSource;
+
+				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
+				if (response.IsSuccessStatusCode)
+				{
+					var content = response.Content;
+
+					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
+					CancelOperation(GroupsMembersKey, false);
+
+					var totalList = JsonConvert.DeserializeObject<TotalListOfUsersWrapper>(jsonString);
+
+
+
+					var index = jsonString.IndexOf('{');
+					jsonString = jsonString.Substring(index + 1);
+
+					index = jsonString.IndexOf('{');
+					if (index == -1)
+					{
+						//TODO: analyze response and keep total amonunt of found users.
+						throw new UsersNotFoundException("Users were not found!");
+						//return new List<User>();
+					}
+					jsonString = jsonString.Substring(index);
+					var length = jsonString.Length;
+
+
+					index = jsonString.IndexOf('{');
+					jsonString = jsonString.Substring(index + 1);
+
+					index = jsonString.IndexOf('{');
+					if (index == -1)
+					{
+						//TODO: analyze response and keep total amonunt of found users.
+						throw new UsersNotFoundException("Users were not found!");
+					//return new List<User>();
+					}
+					jsonString = jsonString.Substring(index);
+					var finalString = "{response:[" + jsonString;
+					finalString = finalString.Substring(0, finalString.Length - 1);
+					//TODO: why it doesn't work?
+					var responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(finalString);
+
+					totalList.totalListOfUsers.users =  responseUsers.users;
+				}
+				CancelOperation(GroupsMembersKey, false);
+			}
+			return new TotalListOfUsers();
+		}
+
+		#endregion
 	}
 
 	#region Public Enum
@@ -797,7 +893,7 @@ namespace VKPeopleInviter
 
 	#endregion
 
-	sealed class UsersNotFoundException : Exception
+	public sealed class UsersNotFoundException : Exception
 	{
 		public UsersNotFoundException(string message) : base(message) { }
 	}

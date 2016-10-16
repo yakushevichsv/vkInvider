@@ -14,9 +14,7 @@ namespace VKPeopleInviter
 		private int offset = 0;
 		bool cancelSearch = false;
 		const int c_OrigCount = 8;
-		//const int c_BulkCount = 20;
-		//private List<string> idsToAsk = new List<string>();
-		private VKManager vkManager = VKManager.sharedInstance();
+		VKManager vkManager = VKManager.sharedInstance();
 
 		async void Handle_ItemAppearing(object sender, ItemVisibilityEventArgs e)
 		{
@@ -65,6 +63,10 @@ namespace VKPeopleInviter
 		{
 			base.OnAppearing();
 			SearchPeople.TextColor = Color.Black;
+
+			//TODO: remove that...
+			var testResult = vkManager.GroupsGetMembers(Constants.Group1ToUseId);
+			Debug.WriteLine(" Group Members result " + testResult);
 		}
 
 		void Handle_SelectUnSelectAll(object sender, System.EventArgs e)
@@ -172,7 +174,7 @@ namespace VKPeopleInviter
 			{
 				cancelSearch = true;
 				((SearchBar)sender).Text = sText;
-				vkManager.CancelSearchPeople(sText);
+				vkManager.CancelOperation(sText);
 				PeopleListView.EndRefresh();
 
 				return;
@@ -182,7 +184,7 @@ namespace VKPeopleInviter
 			if (sText != text && sText != null && sText.Length != 0)
 			{
 
-				vkManager.CancelSearchPeople(sText);
+				vkManager.CancelOperation(sText);
 				PeopleListView.EndRefresh();
 				offset = 0;
 				count = 0;
@@ -222,7 +224,6 @@ namespace VKPeopleInviter
 					int cityCode = 5835; // Rechica...
 					var result = await vkManager.SearchPeople(text, cityCode, offset2, count2);
 					var finalResult = new List<MultipleItemSelectlon<User>>();
-
 					this.searchText = text;
 					this.offset = offset2;
 					if (result.Count != 0)
