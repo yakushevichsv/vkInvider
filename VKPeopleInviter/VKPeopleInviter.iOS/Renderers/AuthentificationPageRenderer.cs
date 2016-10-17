@@ -23,7 +23,7 @@ namespace VKPeopleInviter.iOS
 		private void performAuthentification()
 		{
 			var auth = new OAuth2Authenticator(
-								   Constants.ClientId,
+				Constants.ClientId.ToString(),
 								   Constants.Scope,
 								   new Uri(Constants.AuthorizeUrl),
 								   new Uri(Constants.RedirectUrl));
@@ -126,7 +126,7 @@ namespace VKPeopleInviter.iOS
 				dic["access_token"] = token;
 				dic["user_ids"] = userId;
 
-				dic["fields"] = "uid,first_name,last_name,sex,photo_100";
+				dic["fields"] = "uid,first_name,last_name,sex," + User.PicturesJoint;
 
 				var request = new OAuth2Request("GET", new Uri(Constants.UserInfoUrl), dic, e.Account);
 				var response = await request.GetResponseAsync();

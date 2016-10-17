@@ -256,17 +256,16 @@ namespace VKPeopleInviter
 
 		//5835 - Rechica
 		// 282 - Minsk
-		public async Task<List<User>> SearchPeople(string query, int cityCode, int offset = 0, int count = 100)
+		public async Task<TotalListOfUsers> SearchPeople(string query, long cityCode, long offset = 0, int count = 100)
 		{
 			//String template = "https://api.vk.com/method/METHOD_NAME?PARAMETERS&access_token=ACCESS_TOKEN"
 			string token = App.User.Token;
-
-			string parameters = "q=" + query + "&sort=1&fields=photo_100,uid,first_name,last_name,can_write_private_message" + "&sex=1&age_from=19&age_to=34" + "&country=3&city=" + cityCode + "&offset=" + offset + "&count=" + count;
+			string parameters = "q=" + WebUtility.UrlEncode(query) + "&sort=1&fields="+ User.PicturesJoint + ",uid,first_name,last_name,can_write_private_message" + "&sex=1&age_from=19&age_to=34" + "&country=3&city=" + cityCode + "&offset=" + offset + "&count=" + count;
 			string templatePart = UsersSearchAPIKey + parameters;
 			string template = templatePart + "&access_token=" + token;
 
 			CancelOperation(UsersSearchAPIKey);
-
+			var totalList = new TotalListOfUsers();
 			using (var client = new HttpClient())
 			{
 
@@ -274,12 +273,15 @@ namespace VKPeopleInviter
 				cacheMap[UsersSearchAPIKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
+
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;
 
 					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
 					CancelOperation(UsersSearchAPIKey, false);
+
+					 // JsonConvert.DeserializeObject<TotalListOfUsersWrapper>(jsonString);
 
 					var index = jsonString.IndexOf('{');
 					jsonString = jsonString.Substring(index + 1);
@@ -291,16 +293,28 @@ namespace VKPeopleInviter
 						throw new UsersNotFoundException("Users were not found!");
 						//return new List<User>();
 					}
+
+					var index2 = jsonString.IndexOf('[');
+					var index3 = jsonString.IndexOf(',');
+					var numberStr = jsonString.Substring(index2+1, index3 - index2 - 1);
+
+					totalList.Count = long.Parse(numberStr);
+
+
 					jsonString = jsonString.Substring(index);
 					var length = jsonString.Length;
 
 					var finalString = "{response:[" + jsonString;
 					var responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(finalString);
-					return new List<User>(responseUsers.users);
+
+					totalList.Users = responseUsers.users;
+
+					return totalList;
 				}
-				CancelOperation(UsersSearchAPIKey, false);
+				else
+					CancelOperation(UsersSearchAPIKey, false);
 			}
-			return new List<User>();
+			return totalList;
 		}
 
 		public async Task<long[]> SendMessageToUsers(string message, string[] userIDs)
@@ -513,7 +527,7 @@ namespace VKPeopleInviter
 			CancelOperation(templateKey);
 
 			if (!string.IsNullOrEmpty(text))
-				template += "&text=" + text;
+				template += "&text=" + WebUtility.UrlEncode(text);
 
 			if (follow.HasValue)
 				template += "&follow=" + follow.Value;
@@ -725,7 +739,10 @@ namespace VKPeopleInviter
 			List<string> eFields = null;
 
 			if (fields == null || fields.Length == 0)
-				eFields = new List<string>() { "first_name", "last_name", "photo_100", "uid", "can_write_private_message" };
+			{
+				eFields = new List<string>() { "first_name", "last_name", "uid", "can_write_private_message" };
+				eFields.AddRange(User.Pictures);
+			}
 			else
 				eFields = new List<string>(fields);
 
@@ -791,7 +808,9 @@ namespace VKPeopleInviter
 					//TODO: why it doesn't work?
 					var responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(finalString);
 
-					totalList.totalListOfUsers.users =  responseUsers.users;
+					totalList.totalListOfUsers.Users =  responseUsers.users;
+
+					return totalList.totalListOfUsers;
 				}
 				CancelOperation(GroupsMembersKey, false);
 			}

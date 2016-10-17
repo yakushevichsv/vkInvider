@@ -4,22 +4,17 @@ namespace VKPeopleInviter
 {
 	public static class Constants
 	{
-		// AWS
-		// Sign up for an AWS account at https://aws.amazon.com/
-		// Configure at https://console.aws.amazon.com/cognito/
-		public static string CognitoIdentityPoolId = "";
-
 		public static string CitiesKey = "CitiesKey";
 		public static string InvitationTemplateKey = "InvitationTemplateKey";
 
 		// OAuth
-		public static string ClientId = "5537512";
+		public static long ClientId = 5537512;
 		public static string ClientSecret = "E9x6ywxHcYnnqf3ZXtjd";
 
-		public static string Group1ToUseId = "72566211";
-		public static string CityCodeId = " ";
+		public static long Group1ToUseId = 72566211;
+		public static long CityCodeId = 5835;
 
-		public static string GroupId = "100802490";
+		public static long GroupId = 100802490;
 
 		// These values do not need changing
 		public static string Scope = "friends,video,groups,offline,messages";
@@ -34,7 +29,7 @@ namespace VKPeopleInviter
 		{
 			get
 			{
-				return new string[] { Group1ToUseId };
+				return new string[] { Group1ToUseId.ToString() };
 			}
 		}
 	}

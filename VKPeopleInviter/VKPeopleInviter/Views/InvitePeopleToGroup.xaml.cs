@@ -9,11 +9,11 @@ namespace VKPeopleInviter
 {
 	public partial class InvitePeopleToGroup : ContentPage
 	{
-		private string searchText = "";
-		private int count = 0;
-		private int offset = 0;
+		string searchText = "";
 		bool cancelSearch = false;
 		const int c_OrigCount = 8;
+		long totalCode = 0;
+
 		VKManager vkManager = VKManager.sharedInstance();
 
 		async void Handle_ItemAppearing(object sender, ItemVisibilityEventArgs e)
@@ -49,7 +49,7 @@ namespace VKPeopleInviter
 			var isLast = source.Count != 0 && (source[source.Count - 1].Item.Id).Equals(((MultipleItemSelectlon<User>)e.Item).Item.Id);
 
 			if (isLast)
-				SearchPrivate(searchText, count + offset, 100);
+				SearchPrivateWithText(this.searchText);
 		}
 
 		void Handle_ItemDisappearing(object sender, ItemVisibilityEventArgs e)
@@ -65,7 +65,7 @@ namespace VKPeopleInviter
 			SearchPeople.TextColor = Color.Black;
 
 			//TODO: remove that...
-			var testResult = vkManager.GroupsGetMembers(Constants.Group1ToUseId);
+			var testResult = vkManager.GroupsGetMembers(Constants.Group1ToUseId.ToString());
 			Debug.WriteLine(" Group Members result " + testResult);
 		}
 
@@ -155,7 +155,7 @@ namespace VKPeopleInviter
 			var text = ((SearchBar)sender).Text;
 			searchText = text;
 			RunActivityIndicator();
-			SearchPrivate(text, offset, count);
+			SearchPrivateWithText(text);
 		}
 
 
@@ -180,16 +180,11 @@ namespace VKPeopleInviter
 				return;
 			}
 
-			var useMinimum = false;
 			if (sText != text && sText != null && sText.Length != 0)
 			{
 
 				vkManager.CancelOperation(sText);
 				PeopleListView.EndRefresh();
-				offset = 0;
-				count = 0;
-				//arrayOfIds.Clear();
-				useMinimum = true;
 				PeopleListView.ItemsSource = null;
 			}
 
@@ -203,12 +198,23 @@ namespace VKPeopleInviter
 			((SearchBar)sender).Text = text;
 			//RunActivityIndicator();
 			searchText = text;
-			count = useMinimum ? c_OrigCount : 100;
 			PeopleListView.BeginRefresh();
 		}
 
 
+		void SearchPrivateWithText(string text)
+		{
 
+			var source = (List<MultipleItemSelectlon<User>>)(PeopleListView).ItemsSource;
+
+			var offset = 0;
+			var batchSize = 100;
+			if (!(source == null || source.Count == 0))
+				offset = source.Count;
+
+
+			SearchPrivate(text, offset, batchSize);
+		}
 
 		private async void SearchPrivate(string text, int offset2 = 0, int count2 = 100)
 		{
@@ -221,21 +227,20 @@ namespace VKPeopleInviter
 			else {
 				try
 				{
-					int cityCode = 5835; // Rechica...
-					var result = await vkManager.SearchPeople(text, cityCode, offset2, count2);
+					var result = await vkManager.SearchPeople(text, Constants.CityCodeId, offset2, count2);
 					var finalResult = new List<MultipleItemSelectlon<User>>();
 					this.searchText = text;
-					this.offset = offset2;
-					if (result.Count != 0)
-						this.count = result.Count;
 
+					if (this.totalCode == 0)
+						this.totalCode = result.Count;
+					
 					var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
 
 					if (source != null && source.Count != 0)
 						finalResult.AddRange(source);
 
 
-					foreach (var currentUser in result)
+					foreach (var currentUser in result.Users)
 						finalResult.Add(new MultipleItemSelectlon<User>() { Selected = false, Item = currentUser });
 
 					PeopleListView.ItemsSource = finalResult;
@@ -295,7 +300,8 @@ namespace VKPeopleInviter
 
 		void Handle_Refreshing(object sender, System.EventArgs e)
 		{
-			SearchPrivate(this.searchText, offset, count);
+			Debug.Assert(searchText.Length != 0);
+			SearchPrivateWithText(this.searchText);
 		}
 
 		void HandleNextToolBarClicked(object sender, EventArgs e)
@@ -309,7 +315,7 @@ namespace VKPeopleInviter
 					newItem.Item = arrayElemenet;
 					result.Add(newItem);
 				}
-				var page = new PeopleInvitationStatusPage(result.ToArray(), Constants.GroupId);
+				var page = new PeopleInvitationStatusPage(result.ToArray(), Constants.GroupId.ToString());
 				Navigation.PushAsync(page);
 			}
 		}

@@ -32,7 +32,7 @@ namespace VKPeopleInviter.Droid
 
 					// Initialize the object that communicates with the OAuth service
 					var auth = new OAuth2Authenticator (
-						           Constants.ClientId,
+						Constants.ClientId.ToString(),
 						           Constants.Scope,
 						           new Uri (Constants.AuthorizeUrl),
 						           new Uri (Constants.RedirectUrl));
@@ -69,7 +69,7 @@ namespace VKPeopleInviter.Droid
                 Dictionary<string, string> dic = new Dictionary<string, string>();
                 dic["access_token"] = token;
                 dic["user_ids"] = userId;
-                dic["fields"] = "uid,first_name,last_name,sex,photo_100";
+				dic["fields"] = "uid,first_name,last_name,sex," + User.PicturesJoint;
                 var request = new OAuth2Request ("GET", new Uri (Constants.UserInfoUrl), dic, e.Account);
 				var response = await request.GetResponseAsync ();
 				if (response != null) {

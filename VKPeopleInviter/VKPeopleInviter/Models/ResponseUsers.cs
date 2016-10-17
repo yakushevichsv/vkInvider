@@ -16,7 +16,7 @@ namespace VKPeopleInviter
 		public long Count { get; set; }
 
 		[JsonProperty("items")]
-		public User[] users { get; set;}
+		public User[] Users { get; set;}
 	}
 
 	[JsonObject]
