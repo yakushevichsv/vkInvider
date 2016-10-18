@@ -732,7 +732,7 @@ namespace VKPeopleInviter
 		/// <param name="count">Number of returned items, 1000 by default</param>
 		/// <param name="sort">If set to <c>true</c> sort. in ascending.</param>
 		/// <param name="fields">Extra fields to return <list type="string"> <item>can_write_private_message</item> </list> </param>
-		public async Task<TotalListOfUsers> GroupsGetMembers(string groupId, int offset = 0, int count = 1000, bool sort = true, string[] fields = null)
+		public async Task<TotalListOfUsers> GroupsGetMembers(long groupId, long offset = 0, long count = 1000, bool sort = true, string[] fields = null)
 		{
 			string token = App.User.Token;
 
@@ -751,7 +751,7 @@ namespace VKPeopleInviter
 			foreach (string tempId in eFields)
 			{
 				if (resultFields.Length != 0)
-					resultFields = string.Concat(tempId, ",");
+					resultFields = string.Concat(resultFields, ",");
 				resultFields = string.Concat(resultFields, tempId);
 			}
 

@@ -58,6 +58,9 @@
       <DependentUpon>PeopleInvitationStatusPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Cells\UserGroupSelectableCell.cs" />
+    <Compile Include="Views\InvitePeopleFromGroupToGroup.xaml.cs">
+      <DependentUpon>InvitePeopleFromGroupToGroup.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -104,6 +107,9 @@
     <EmbeddedResource Include="Resources\checkbox.png" />
     <EmbeddedResource Include="Resources\checked.png" />
     <EmbeddedResource Include="PeopleInvitationStatusPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\InvitePeopleFromGroupToGroup.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
   </ItemGroup>

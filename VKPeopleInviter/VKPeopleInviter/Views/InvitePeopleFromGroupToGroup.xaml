@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="VKPeopleInviter.InvitePeopleFromGroupToGroup" xmlns:c="clr-namespace:VKPeopleInviter.Controls"	Title="Invite People from Group">
+<ContentPage.ToolbarItems>
+	<ToolbarItem Name="Select All" x:Name="LeftNavButton" Clicked ="Handle_SelectUnSelectAll"/>
+	<ToolbarItem Name="Next" x:Name="RightNavButton" Clicked="HandleNextToolBarClicked"/>
+</ContentPage.ToolbarItems>
+	<ContentPage.Content>
+		<RelativeLayout>
+		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" 
+					RelativeLayout.HeightConstraint="{ConstraintExpression Type=RelativeToParent, Property=Height, Factor=1}" 
+					RelativeLayout.WidthConstraint="{ConstraintExpression Type=RelativeToParent, Property=Width, Factor=1}"
+					>
+	<ListView IsPullToRefreshEnabled="True" Refreshing="Handle_Refreshing" ItemSelected="Handle_ItemSelected" x:Name="PeopleListView" ItemAppearing="Handle_ItemAppearing" ItemDisappearing="Handle_ItemDisappearing">
+      <ListView.ItemTemplate>
+        <DataTemplate>
+		 <c:UserSelectableCell ClickListener="Handle_ClickListener" FullName="{Binding Item.FullName}" ImageSource="{Binding Item.PictureSource}" Selected="{Binding Selected, Mode = TwoWay}">
+						</c:UserSelectableCell>
+        </DataTemplate>
+      </ListView.ItemTemplate>
+    </ListView>
+			<Button Text="Send message" Clicked="Handle_SendClicked" x:Name="SendButton" IsVisible="false"/>
+  </StackLayout>
+			<ActivityIndicator RelativeLayout.YConstraint="{ConstraintExpression Type=RelativeToParent, Property=Height, Factor=0.5}" 
+					RelativeLayout.XConstraint="{ConstraintExpression Type=RelativeToParent, Property=Width, Factor=0.5}" IsVisible="false" Color ="Black"  x:Name ="ActivityIndicator"/>
+			</RelativeLayout>
+	</ContentPage.Content>
+</ContentPage>

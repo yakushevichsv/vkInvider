@@ -7,12 +7,9 @@ using VKPeopleInviter.Controls;
 
 namespace VKPeopleInviter
 {
-	public partial class InvitePeopleToGroup : ContentPage
+	public partial class InvitePeopleFromGroupToGroup : ContentPage
 	{
-		string searchText = "";
-		bool cancelSearch = false;
-		const int c_OrigCount = 8;
-		long totalCode = 0;
+		long totalCode = -1;
 
 		VKManager vkManager = VKManager.sharedInstance();
 
@@ -49,7 +46,7 @@ namespace VKPeopleInviter
 			var isLast = source.Count != 0 && (source[source.Count - 1].Item.Id).Equals(((MultipleItemSelectlon<User>)e.Item).Item.Id);
 
 			if (isLast)
-				SearchPrivateWithText(this.searchText);
+				GetChunkOfMembersUsingRealData();
 		}
 
 		void Handle_ItemDisappearing(object sender, ItemVisibilityEventArgs e)
@@ -57,12 +54,6 @@ namespace VKPeopleInviter
 			var ItemWrapper = (MultipleItemSelectlon<User>)e.Item;
 			var id = ItemWrapper.Item.Id;
 			vkManager.CancelFriendshipDetection(new string[] { id });
-		}
-
-		protected override void OnAppearing()
-		{
-			base.OnAppearing();
-			SearchPeople.TextColor = Color.Black;
 		}
 
 		void Handle_SelectUnSelectAll(object sender, System.EventArgs e)
@@ -87,7 +78,7 @@ namespace VKPeopleInviter
 			foreach (var item in source)
 				item.Selected = selected;
 
-			SendButton.IsVisible = GetSelection().Count != 0;
+			ChangeToolBarAndSend();
 		}
 
 		void Handle_ItemSelected(object sender, Xamarin.Forms.SelectedItemChangedEventArgs e)
@@ -99,16 +90,13 @@ namespace VKPeopleInviter
 					MultipleItemSelectlon<User> user = (MultipleItemSelectlon<User>)((ListView)sender).SelectedItem;
 					user.Selected = false;
 				}
-
-				SendButton.IsVisible = GetSelection().Count != 0;
-
+				ChangeToolBarAndSend();
 				return;
 			}
 
 			MultipleItemSelectlon<User> selUser = (MultipleItemSelectlon<User>)e.SelectedItem;
-
 			selUser.Selected = !selUser.Selected;
-			SendButton.IsVisible = GetSelection().Count != 0;
+			ChangeToolBarAndSend();
 			((ListView)sender).SelectedItem = null;
 		}
 
@@ -146,87 +134,41 @@ namespace VKPeopleInviter
 			}
 		}
 
-		void Handle_SearchButtonPressed(object sender, EventArgs e)
-		{
-			var text = ((SearchBar)sender).Text;
-			searchText = text;
-			RunActivityIndicator();
-			SearchPrivateWithText(text);
-		}
+		private void GetChunkOfMembersUsingRealData() {
+			Debug.WriteLine("Start GetChunkOfMembersUsingRealData");
 
+			var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
 
-		void Handle_TextChanged(object sender, TextChangedEventArgs e)
-		{
-			if (cancelSearch && e.OldTextValue == null)
-			{
-				cancelSearch = false;
-				return;
-			}
-
-			var text = e.NewTextValue;
-			var sText = e.OldTextValue;
-
-			if (text == null)
-			{
-				cancelSearch = true;
-				((SearchBar)sender).Text = sText;
-				vkManager.CancelOperation(sText);
-				PeopleListView.EndRefresh();
-
-				return;
-			}
-
-			if (sText != text && sText != null && sText.Length != 0)
-			{
-
-				vkManager.CancelOperation(sText);
-				PeopleListView.EndRefresh();
-				PeopleListView.ItemsSource = null;
-			}
-
-			if (text == null)
-			{
-				cancelSearch = true;
-				((SearchBar)sender).Text = sText;
-				return;
-			}
-
-			((SearchBar)sender).Text = text;
-			//RunActivityIndicator();
-			searchText = text;
-			PeopleListView.BeginRefresh();
-		}
-
-
-		void SearchPrivateWithText(string text)
-		{
-
-			var source = (List<MultipleItemSelectlon<User>>)(PeopleListView).ItemsSource;
-
-			var offset = 0;
-			var batchSize = 100;
+			long offset = 0;
 			if (!(source == null || source.Count == 0))
 				offset = source.Count;
 
+			long count = 0;
 
-			SearchPrivate(text, offset, batchSize);
-		}
+			if (totalCode  > offset)
+				count = Math.Min(100,totalCode - offset);
+			else if (totalCode == offset || totalCode < 0 )
+				count = 100;
 
-		private async void SearchPrivate(string text, int offset2 = 0, int count2 = 100)
-		{
-			Debug.WriteLine("Search Private Text: " + text + "Offset " + offset2 + " Count " + count2);
-			if (string.IsNullOrWhiteSpace(text))
-			{
-				//Search all people...
-				Debug.Assert(false);
+			if (count != 0) {
+				GetChunkOfMembers(offset, count);
 			}
 			else {
+				//TODO: signal absence of items...
+			}
+			Debug.WriteLine("Ended GetChunkOfMembersUsingRealData");	
+		}
+
+
+		private async void GetChunkOfMembers(long offset2 = 0, long count2 = 100)
+		{
+			Debug.WriteLine("GetChunkOfMembers "  + "Offset " + offset2 + " Count " + count2);
 				try
 				{
-					var result = await vkManager.SearchPeople(text, Constants.CityCodeId, offset2, count2);
+					var result = await  vkManager.GroupsGetMembers(Constants.Group1ToUseId, offset2, count2); 
 					var finalResult = new List<MultipleItemSelectlon<User>>();
-					this.searchText = text;
 
+					
 					if (this.totalCode == 0)
 						this.totalCode = result.Count;
 					
@@ -235,9 +177,10 @@ namespace VKPeopleInviter
 					if (source != null && source.Count != 0)
 						finalResult.AddRange(source);
 
+					bool selected = !LeftNavButton.Text.StartsWith("Select",StringComparison.OrdinalIgnoreCase);
 
 					foreach (var currentUser in result.Users)
-						finalResult.Add(new MultipleItemSelectlon<User>() { Selected = false, Item = currentUser });
+						finalResult.Add(new MultipleItemSelectlon<User>() { Selected = selected, Item = currentUser });
 
 					PeopleListView.ItemsSource = finalResult;
 				}
@@ -268,7 +211,6 @@ namespace VKPeopleInviter
 					StopActivityIndicator();
 					Debug.WriteLine("Search Private Finished");
 				}
-			}
 		}
 
 		async void Handle_SendClicked(object sender, EventArgs e)
@@ -276,7 +218,13 @@ namespace VKPeopleInviter
 			try
 			{
 				Debug.WriteLine("Handle_SendClicked");
-				var ids = GetSelection().Select(item => item.Id).ToArray();
+				var ids = GetSelection().Where(item => item.CanWritePrivateMessage).Select(item => item.Id).ToArray();
+
+				if (ids.Length == 0){
+					await DisplayAlert("Impossible", "All items acess only private messages", "OK");                                        
+					return;
+				}
+
 				var settingsManager = new SettingsManager(Application.Current);
 				await vkManager.SendMessageToUsers(settingsManager.InvitationText, ids);
 				//analayze results of sending...
@@ -296,8 +244,7 @@ namespace VKPeopleInviter
 
 		void Handle_Refreshing(object sender, System.EventArgs e)
 		{
-			Debug.Assert(searchText.Length != 0);
-			SearchPrivateWithText(this.searchText);
+			GetChunkOfMembersUsingRealData(); 
 		}
 
 		void HandleNextToolBarClicked(object sender, EventArgs e)
@@ -316,14 +263,25 @@ namespace VKPeopleInviter
 			}
 		}
 
-		public InvitePeopleToGroup()
+		public InvitePeopleFromGroupToGroup()
 		{
 			InitializeComponent();
+
+			GetChunkOfMembersUsingRealData();
 		}
 
 		void Handle_ClickListener(UserSelectableCell m, EventArgs e)
 		{
+			ChangeToolBarAndSend();
+		}
+
+		void ChangeToolBarAndSend() 
+		{
 			SendButton.IsVisible = GetSelection().Count != 0;
+			if (SendButton.IsVisible) 
+				LeftNavButton.Text = " Unselect All";
+			else 
+				LeftNavButton.Text = "Select All";
 		}
 	}
 }

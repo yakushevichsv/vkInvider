@@ -9,13 +9,12 @@ namespace VKPeopleInviter
 	{
 		async void Handle_Clicked(object sender, System.EventArgs e)
 		{
-			
 			await Navigation.PushAsync(new InvitePeopleToGroup());
 		}
 
-		void HandleGroupsUse(object sender, System.EventArgs e)
+		async void HandleGroupsUse(object sender, System.EventArgs e)
 		{
-			throw new NotImplementedException();
+			await Navigation.PushAsync(new InvitePeopleFromGroupToGroup());
 		}
 
 		public ItemsSelectorPage()
