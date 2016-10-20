@@ -219,17 +219,25 @@ namespace VKPeopleInviter
 			{
 				Debug.WriteLine("Handle_SendClicked");
 				var ids = GetSelection().Where(item => item.CanWritePrivateMessage).Select(item => item.Id).ToArray();
+				var friendRequestIds = GetSelection().Where(item => !item.CanWritePrivateMessage).Select(item => item.Id).ToArray();
 
-				if (ids.Length == 0){
+				/*if (ids.Length == 0){
 					await DisplayAlert("Impossible", "All items acess only private messages", "OK");                                        
 					return;
-				}
-
+				}*/
 				var settingsManager = new SettingsManager(Application.Current);
 				await vkManager.SendMessageToUsers(settingsManager.InvitationText, ids);
 				//analayze results of sending...
 				await DisplayAlert("Success", "All users were notified", "OK");
 				Debug.WriteLine("Success", "All users were notified");
+
+				if (friendRequestIds.Length != 0)
+				{
+					foreach (var friend in friendRequestIds)
+					{
+						var friendInvitation = await vkManager.CreateOrApproveFriendRequest(friend);
+					}
+				}
 			}
 			catch (VKOperationException error)
 			{

@@ -5,7 +5,7 @@
 	<ListView IsPullToRefreshEnabled="True"  x:Name="PeopleListView" ItemAppearing="Handle_ItemAppearing" ItemDisappearing="Handle_ItemDisappearing" Refreshing="Handle_Refreshing">
       <ListView.ItemTemplate>
         <DataTemplate>
-		 <c:UserGroupSelectableCell FullName="{Binding Item.FullName}" ImageSource="{Binding Item.PictureSource}" Selected="{Binding Selected, Mode = TwoWay}" GroupMemberStatus ="{Binding Status, Mode = TwoWay}"  >
+		 <c:UserGroupSelectableCell FullName="{Binding Item.FullName}" ImageUri="{Binding Item.ImageUri}" Selected="{Binding Selected, Mode = TwoWay}" GroupMemberStatus ="{Binding Status, Mode = TwoWay}"  >
 						</c:UserGroupSelectableCell>
         </DataTemplate>
       </ListView.ItemTemplate>

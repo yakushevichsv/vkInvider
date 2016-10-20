@@ -20,8 +20,8 @@ namespace VKPeopleInviter.Controls
 		public static readonly BindableProperty FullNameProperty =
 			BindableProperty.Create("FullName", typeof(string), typeof(UserSelectableCell), String.Empty, BindingMode.TwoWay);
 
-		public static readonly BindableProperty ImageSourceProperty =
-			BindableProperty.Create("ImageSource", typeof(ImageSource), typeof(UserSelectableCell), null , BindingMode.TwoWay);
+		public static readonly BindableProperty ImageUriProperty =
+			BindableProperty.Create("ImageUri", typeof(string), typeof(UserSelectableCell), null , BindingMode.TwoWay);
 
 		public static readonly BindableProperty FriendshipStatusProperty =
 			BindableProperty.Create("FriendShipStatus", typeof(FriendShipStatus), typeof(UserSelectableCell), FriendShipStatus.None , BindingMode.TwoWay);
@@ -41,15 +41,15 @@ namespace VKPeopleInviter.Controls
 			}
 		}
 
-		public ImageSource ImageSource
+		public string ImageUri
 		{
 			get
 			{
-				return (ImageSource)GetValue(ImageSourceProperty);
+				return (string)GetValue(ImageUriProperty);
 			}
 			set
 			{
-				SetValue(ImageSourceProperty, value);
+				SetValue(ImageUriProperty, value);
 			}
 		}
 
@@ -173,9 +173,9 @@ namespace VKPeopleInviter.Controls
 			if (BindingContext != null)
 			{
 				lblFullName.Text = FullName;
-				ivPicture.Source = ImageSource;
+				var pictureSource = ImageSource.FromUri(new Uri(ImageUri));
 				ivSelected.Source = Selected ? sCheckedImageSource : sUnckeckedImageSource;
-
+				ivPicture.Source = pictureSource;
 				var obj = BindingContext as MultipleItemSelectlon<User>;
 				if (obj != null)
 				{

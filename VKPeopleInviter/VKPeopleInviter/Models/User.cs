@@ -66,7 +66,7 @@ namespace VKPeopleInviter
 		public bool CanWritePrivateMessage { get; set;}
 
 		[JsonIgnore]
-		public ImageSource PictureSource
+		public string ImageUri
 		{
 			get
 			{
@@ -86,7 +86,7 @@ namespace VKPeopleInviter
 					result = Picture50;
 					 
 
-				return !string.IsNullOrEmpty(result)  ? new UriImageSource() { Uri = new Uri(result)} : null;
+				return !string.IsNullOrEmpty(result)  ? result : null;
 			}
 		}
 		[JsonIgnore]
