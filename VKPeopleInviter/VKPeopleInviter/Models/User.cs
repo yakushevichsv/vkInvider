@@ -1,6 +1,6 @@
 ﻿using System;
 using Newtonsoft.Json;
-using Xamarin.Forms;
+
 
 namespace VKPeopleInviter
 {
@@ -33,7 +33,7 @@ namespace VKPeopleInviter
 		}
 
 		[JsonProperty ("uid")]
-		public string Id { get; set; }
+		public long Id { get; set; }
 
 		[JsonProperty ("first_name")]
 		public string FirstName { get; set; }

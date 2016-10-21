@@ -77,7 +77,7 @@ namespace VKPeopleInviter.Droid
 					// The users email address will be used to identify data in SimpleDB
 					string userJson = response.GetResponseText ();
                     ResponseUsers responseUsers = JsonConvert.DeserializeObject<ResponseUsers> (userJson);
-                    User user = responseUsers.users.First();
+					User user = responseUsers.Items.First();
                     if (user != null) {
                         e.Account.Username = user.FirstName + " " + user.LastName;
 						e.Account.Properties.Add("token", token);

@@ -15,10 +15,10 @@ namespace VKPeopleInviter
 		VKManager vkManager = VKManager.sharedInstance();
 		GroupMemberItem[] m_Users = null;
 		bool doneOnce = false;
-		string groupId;
+		long groupId;
 		ToolbarItem m_CancelOpt = null;
 
-		public PeopleInvitationStatusPage(GroupMemberItem[] users, string groupId) : base()
+		public PeopleInvitationStatusPage(GroupMemberItem[] users, long groupId) : base()
 		{
 			InitializeComponent();
 			this.m_Users = users;
@@ -237,7 +237,7 @@ namespace VKPeopleInviter
 		{
 			Debug.WriteLine("CancelRowWithUserAppearance");
 
-			vkManager.CancelIsAGroupMemberDetection(new string[] { user.Id }, groupId);
+			vkManager.CancelIsAGroupMemberDetection(new long[] { user.Id }, groupId);
 		}
 
 		private void HandleRowWithUserAppear(GroupMemberItem user)

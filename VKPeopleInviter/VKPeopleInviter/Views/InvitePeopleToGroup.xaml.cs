@@ -24,12 +24,14 @@ namespace VKPeopleInviter
 			try
 			{
 				Debug.WriteLine("DetectFriendshipStatusWithUsers");
-				var result = await vkManager.DetectFriendshipStatusWithUsers(new string[] { id }); //TODO: perform request in a group..
+				var result = await vkManager.DetectFriendshipStatusWithUsers(new long[] { id }); //TODO: perform request in a group..
+				var groupStatus = await vkManager.DetectIfUserIsAGroupMember(new long[] {id }, Constants.GroupId);
+
 				Debug.WriteLine("DetectFriendshipStatusWithUsers finished with result " + result);
 
 				foreach (var keyPair in result)
 				{
-					var fWrapper =  source.Find((item) => item.Item.Id == keyPair.Key);
+					var fWrapper =  source.Find((item) => item.Item.Id.ToString() == keyPair.Key);
 					if (fWrapper == null)
 						continue;
 					Debug.WriteLine("DetectFriendshipStatusWithUsers Detected status for item " + fWrapper.Item + "\n Status " + keyPair.Value);
@@ -56,7 +58,7 @@ namespace VKPeopleInviter
 		{
 			var ItemWrapper = (MultipleItemSelectlon<User>)e.Item;
 			var id = ItemWrapper.Item.Id;
-			vkManager.CancelFriendshipDetection(new string[] { id });
+			vkManager.CancelFriendshipDetection(new long[] { id });
 		}
 
 		protected override void OnAppearing()
@@ -236,12 +238,12 @@ namespace VKPeopleInviter
 						finalResult.AddRange(source);
 
 
-					foreach (var currentUser in result.Users)
+					foreach (var currentUser in result.Items)
 						finalResult.Add(new MultipleItemSelectlon<User>() { Selected = false, Item = currentUser });
 
 					PeopleListView.ItemsSource = finalResult;
 				}
-				catch (UsersNotFoundException error)
+				catch (ItemNotFoundException error)
 				{
 					var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
 					if (source == null || source.Count == 0)
@@ -311,7 +313,7 @@ namespace VKPeopleInviter
 					newItem.Item = arrayElemenet;
 					result.Add(newItem);
 				}
-				var page = new PeopleInvitationStatusPage(result.ToArray(), Constants.GroupId.ToString());
+				var page = new PeopleInvitationStatusPage(result.ToArray(), Constants.GroupId);
 				Navigation.PushAsync(page);
 			}
 		}

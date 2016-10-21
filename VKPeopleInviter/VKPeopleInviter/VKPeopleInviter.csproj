@@ -61,6 +61,8 @@
     <Compile Include="Views\InvitePeopleFromGroupToGroup.xaml.cs">
       <DependentUpon>InvitePeopleFromGroupToGroup.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\Message.cs" />
+    <Compile Include="Models\DateTimeUnix.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">

@@ -84,6 +84,25 @@ namespace VKPeopleInviter
 			get { return FormatVKMethodKey("friends", "add"); }
 		}
 
+		string MessagesSearchKey
+		{
+			get { return FormatVKMethodKey("messages", "search"); }
+		}
+
+		static string FormatStringFromDic(Dictionary<string, object> obj, HashSet<string> keyForEncoding)
+		{
+			var builder = new StringBuilder();
+			foreach (var keyPair in obj)
+			{
+				var value = keyForEncoding.Contains(keyPair.Key) ? WebUtility.UrlEncode(keyPair.Value.ToString()) : keyPair.Value;
+				if (builder.Length != 0)
+					builder.Append("&");
+
+				builder.Append(keyPair.Key + "=" + value);
+			}
+			return builder.ToString();
+		}
+
 		#endregion
 
 		public async Task<List<City>> ReceiveCities(string query, int country_id, int region_id, int count = 1)
@@ -129,14 +148,11 @@ namespace VKPeopleInviter
 			return new List<City>();
 		}
 
-		string FriendshipKey(string[] userIDs)
+		string FriendshipKey(long[] userIDs)
 		{
-			if (userIDs.Length == 0)
-				return null;
-
 			string resultIDs = "";
 
-			foreach (string tempId in userIDs)
+			foreach (var tempId in userIDs)
 			{
 				if (resultIDs.Length != 0)
 					resultIDs = string.Concat(resultIDs, ",");
@@ -149,7 +165,7 @@ namespace VKPeopleInviter
 			return templateKey;
 		}
 
-		public bool CancelFriendshipDetection(string[] userIDs)
+		public bool CancelFriendshipDetection(long[] userIDs)
 		{
 			string templateKey = FriendshipKey(userIDs);
 
@@ -159,7 +175,7 @@ namespace VKPeopleInviter
 			return CancelOperation(templateKey) != null;
 		}
 
-		public async Task<Dictionary<string, FriendshipStatus>> DetectFriendshipStatusWithUsers(string[] userIDs)
+		public async Task<Dictionary<string, FriendshipStatus>> DetectFriendshipStatusWithUsers(long[] userIDs)
 		{
 			string templateKey = FriendshipKey(userIDs);
 
@@ -209,11 +225,11 @@ namespace VKPeopleInviter
 										{
 											JToken tempToken;
 
-											string fUserId = null;
+											long? fUserId = null;
 											var fStatus = FriendshipStatus.NotAFriend;
 
 											if (eObj.TryGetValue("uid", out tempToken)) //uid
-												fUserId = tempToken.Value<string>();
+												fUserId = tempToken.Value<long>();
 											else {
 												Debug.Assert(userIDs.Length == 1, "Not a one element in array");
 												fUserId = userIDs.Last();
@@ -222,29 +238,14 @@ namespace VKPeopleInviter
 											if (!(eObj.TryGetValue("friend_status", out tempToken) && Enum.TryParse(tempToken.Value<string>(), out fStatus)))
 												continue;
 
-											dicIDs[fUserId] = fStatus;
+											if (fUserId.HasValue)
+												dicIDs[fUserId.ToString()] = fStatus;
 										}
 									}
 								}
 							}
-							else if (property.Name == "error")
-							{
-								var value = property.Value;
-
-								if (value.Type == JTokenType.Object)
-								{
-									var obj = (JObject)value;
-
-									var errorMsg = obj["error_msg"].Value<string>();
-									var errorCode = obj["error_code"].Value<int>();
-									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
-
-#if DEBUG
-									errorMsg += " Code " + errorCode;
-#endif
-									throw new VKOperationException(errorCode, errorMsg);
-								}
-							}
+							else
+								ThrowExceptionIfPropertyHasError(property);
 						}
 					}
 					return dicIDs;
@@ -253,6 +254,27 @@ namespace VKPeopleInviter
 			return null;
 		}
 
+		void ThrowExceptionIfPropertyHasError(JProperty property)
+		{
+			if (property.Name == "error")
+			{
+				var value = property.Value;
+
+				if (value.Type == JTokenType.Object)
+				{
+					var obj = (JObject)value;
+
+					var errorMsg = obj["error_msg"].Value<string>();
+					var errorCode = obj["error_code"].Value<int>();
+					Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
+
+#if DEBUG
+					errorMsg += " Code " + errorCode;
+#endif
+					throw new VKOperationException(errorCode, errorMsg);
+				}
+			}
+		}
 
 		//5835 - Rechica
 		// 282 - Minsk
@@ -260,7 +282,7 @@ namespace VKPeopleInviter
 		{
 			//String template = "https://api.vk.com/method/METHOD_NAME?PARAMETERS&access_token=ACCESS_TOKEN"
 			string token = App.User.Token;
-			string parameters = "q=" + WebUtility.UrlEncode(query) + "&sort=1&fields="+ User.PicturesJoint + ",uid,first_name,last_name,can_write_private_message" + "&sex=1&age_from=19&age_to=34" + "&country=3&city=" + cityCode + "&offset=" + offset + "&count=" + count;
+			string parameters = "q=" + WebUtility.UrlEncode(query) + "&sort=1&fields=" + User.PicturesJoint + ",uid,first_name,last_name,can_write_private_message" + "&sex=1&age_from=19&age_to=34" + "&country=3&city=" + cityCode + "&offset=" + offset + "&count=" + count;
 			string templatePart = UsersSearchAPIKey + parameters;
 			string template = templatePart + "&access_token=" + token;
 
@@ -281,7 +303,7 @@ namespace VKPeopleInviter
 					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
 					CancelOperation(UsersSearchAPIKey, false);
 
-					 // JsonConvert.DeserializeObject<TotalListOfUsersWrapper>(jsonString);
+					// JsonConvert.DeserializeObject<TotalListOfUsersWrapper>(jsonString);
 
 					var index = jsonString.IndexOf('{');
 					jsonString = jsonString.Substring(index + 1);
@@ -290,13 +312,13 @@ namespace VKPeopleInviter
 					if (index == -1)
 					{
 						//TODO: analyze response and keep total amonunt of found users.
-						throw new UsersNotFoundException("Users were not found!");
+						throw new ItemNotFoundException("Users were not found!");
 						//return new List<User>();
 					}
 
 					var index2 = jsonString.IndexOf('[');
 					var index3 = jsonString.IndexOf(',');
-					var numberStr = jsonString.Substring(index2+1, index3 - index2 - 1);
+					var numberStr = jsonString.Substring(index2 + 1, index3 - index2 - 1);
 
 					totalList.Count = long.Parse(numberStr);
 
@@ -307,7 +329,7 @@ namespace VKPeopleInviter
 					var finalString = "{response:[" + jsonString;
 					var responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(finalString);
 
-					totalList.Users = responseUsers.users;
+					totalList.Items = responseUsers.Items;
 
 					return totalList;
 				}
@@ -317,7 +339,7 @@ namespace VKPeopleInviter
 			return totalList;
 		}
 
-		public async Task<long[]> SendMessageToUsers(string message, string[] userIDs)
+		public async Task<long[]> SendMessageToUsers(string message, long[] userIDs)
 		{
 			if (userIDs.Length == 0 || message.Length == 0)
 			{
@@ -326,11 +348,11 @@ namespace VKPeopleInviter
 
 			string resultIDs = "";
 
-			foreach (string userId in userIDs)
+			foreach (var userId in userIDs)
 			{
 				if (resultIDs.Length != 0)
-					resultIDs = String.Concat(resultIDs, ",");
-				resultIDs = String.Concat(resultIDs, userId);
+					resultIDs = string.Concat(resultIDs, ",");
+				resultIDs = string.Concat(resultIDs, userId);
 			}
 
 			String token = App.User.Token;
@@ -365,24 +387,8 @@ namespace VKPeopleInviter
 									ids = array.Select(arg1 => (long)arg1).ToArray();
 								}
 							}
-							else if (property.Name == "error")
-							{
-								var value = property.Value;
-
-								if (value.Type == JTokenType.Object)
-								{
-									var obj = (JObject)value;
-
-									var errorMsg = obj["error_msg"].Value<string>();
-									var errorCode = obj["error_code"].Value<int>();
-									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
-
-#if DEBUG
-									errorMsg += "Code " + errorCode;
-#endif
-									throw new VKOperationException(errorCode, errorMsg);
-								}
-							}
+							else
+								ThrowExceptionIfPropertyHasError(property);
 						}
 					}
 					return ids;
@@ -403,7 +409,7 @@ namespace VKPeopleInviter
 			get { return "https://api.vk.com/method/groups.invite?"; }
 		}
 
-		public bool CancelIsAGroupMemberDetection(string[] userIDs, string groupId)
+		public bool CancelIsAGroupMemberDetection(long[] userIDs, long groupId)
 		{
 			if (userIDs.Length == 0)
 				return false;
@@ -413,14 +419,14 @@ namespace VKPeopleInviter
 			return !((query == null) || CancelOperation(query) == null);
 		}
 
-		private string GetGroupDetectionTemplate(string[] userIDs, string groupId)
+		private string GetGroupDetectionTemplate(long[] userIDs, long groupId)
 		{
 			if (userIDs.Length == 0)
 				return null;
 
 			string resultIDs = "";
 
-			foreach (string userId in userIDs)
+			foreach (var userId in userIDs)
 			{
 				if (resultIDs.Length != 0)
 					resultIDs = String.Concat(resultIDs, ",");
@@ -435,16 +441,14 @@ namespace VKPeopleInviter
 			return templatekey;
 		}
 
-		private string GetAddOrCreateFriendRequestTemplate(string userId)
+		private string GetAddOrCreateFriendRequestTemplate(long userId)
 		{
-			if (String.IsNullOrEmpty(userId)) return null;
-
 			string parameters = "user_id=" + userId;
 			string templateKey = AddOrCreateFriendRequestAPIKey + parameters;
 			return templateKey;
 		}
 
-		public async Task<int> InviteUserToAGroup(string userId, string groupId)
+		public async Task<int> InviteUserToAGroup(long userId, long groupId)
 		{
 			string token = App.User.Token;
 
@@ -487,26 +491,9 @@ namespace VKPeopleInviter
 
 									return obj.Value<int>();
 								}
-								return 0;
 							}
-							else if (property.Name == "error")
-							{
-								var value = property.Value;
-
-								if (value.Type == JTokenType.Object)
-								{
-									var obj = (JObject)value;
-
-									var errorMsg = obj["error_msg"].Value<string>();
-									var errorCode = obj["error_code"].Value<int>();
-									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
-
-#if DEBUG
-									errorMsg += " Code " + errorCode;
-#endif
-									throw new VKOperationException(errorCode, errorMsg);
-								}
-							}
+							else
+								ThrowExceptionIfPropertyHasError(property);
 						}
 					}
 					return 0;
@@ -515,9 +502,9 @@ namespace VKPeopleInviter
 			return 0;
 		}
 
-		public async Task<FriendAddStatus> CreateOrApproveFriendRequest(string userId, string text = null, int? follow = null)
+		public async Task<FriendAddStatus> CreateOrApproveFriendRequest(long userId, string text = null, int? follow = null)
 		{
-			Debug.Assert(!string.IsNullOrEmpty(userId));
+
 			var templateKey = GetAddOrCreateFriendRequestTemplate(userId);
 			if (templateKey == null) return FriendAddStatus.FriendRequestNone;
 
@@ -567,24 +554,8 @@ namespace VKPeopleInviter
 										return retStatus;
 								}
 							}
-							else if (property.Name == "error")
-							{
-								var value = property.Value;
-
-								if (value.Type == JTokenType.Object)
-								{
-									var obj = (JObject)value;
-
-									var errorMsg = obj["error_msg"].Value<string>();
-									var errorCode = obj["error_code"].Value<int>();
-									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
-
-#if DEBUG
-									errorMsg += " Code " + errorCode;
-#endif
-									throw new VKOperationException(errorCode, errorMsg);
-								}
-							}
+							else
+								ThrowExceptionIfPropertyHasError(property);
 						}
 					}
 				}
@@ -592,7 +563,7 @@ namespace VKPeopleInviter
 			}
 		}
 
-		public async Task<UserGroupStatus[]> DetectIfUserIsAGroupMember(string[] userIDs, string groupId)
+		public async Task<UserGroupStatus[]> DetectIfUserIsAGroupMember(long[] userIDs, long groupId)
 		{
 
 			string token = App.User.Token;
@@ -692,24 +663,8 @@ namespace VKPeopleInviter
 									statuses.Add(status);
 								}
 							}
-							else if (property.Name == "error")
-							{
-								var value = property.Value;
-
-								if (value.Type == JTokenType.Object)
-								{
-									var obj = (JObject)value;
-
-									var errorMsg = obj["error_msg"].Value<string>();
-									var errorCode = obj["error_code"].Value<int>();
-									Debug.WriteLine("Error executing operation: Code " + errorCode + "Message " + errorMsg);
-
-#if DEBUG
-									errorMsg += " Code " + errorCode;
-#endif
-									throw new VKOperationException(errorCode, errorMsg);
-								}
-							}
+							else
+								ThrowExceptionIfPropertyHasError(property);
 						}
 					}
 					return statuses.ToArray();
@@ -718,10 +673,136 @@ namespace VKPeopleInviter
 			return null;
 		}
 
+		#region Messages Methods 
+
+		public async Task<TotalListOfMessages> SearchMessages(string query, long peerId, long offset = 0, long count = 100, DateTime? date = null, int previewLength = int.MinValue)
+		{
+			Debug.Assert(!string.IsNullOrEmpty(query));
+			if (string.IsNullOrEmpty(query))
+				throw new ArgumentException("Query is null or empty");
+
+			var dic = new Dictionary<string, object>();
+			const string c_TranslateParam = "q";
+
+			if (!string.IsNullOrEmpty(query))
+				dic.Add(c_TranslateParam, query);
+
+			dic.Add("peer_Id", peerId);
+
+			//TODO: Use time of VK server ....!!!
+			if (date == null)
+				date = DateTime.UtcNow;
+			//dic.Add("date", date.Value.ToUnixTimestamp());
+
+			dic.Add("offset", offset);
+			dic.Add("count", count);
+			dic.Add("preview_length", previewLength != int.MinValue ? previewLength : query.Length);
+
+			var set = new HashSet<string>();
+			set.Add(c_TranslateParam);
+
+			string key = MessagesSearchKey;
+			string token = App.User.Token;
+			string searchQuery = key + FormatStringFromDic(dic, set) + "&access_token=" + token;
+
+			key += query ?? string.Empty + string.Format("{0}.{1}.{2}", peerId, offset, count);
+
+			CancelOperation(key);
+			using (var client = new HttpClient())
+			{
+
+				CancellationTokenSource tokenSource = new CancellationTokenSource();
+				cacheMap[key] = tokenSource;
+
+				var response = await client.GetAsync(searchQuery, tokenSource.Token).ConfigureAwait(false);
+
+				if (response.IsSuccessStatusCode)
+				{
+					var content = response.Content;
+
+					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
+
+
+					var result = JObject.Parse(jsonString);
+
+					var resultObj = result.AsJEnumerable().AsEnumerable();
+
+					foreach (JToken jToken in resultObj)
+					{
+
+						if (jToken.Type == JTokenType.Property)
+						{
+							var property = (JProperty)jToken;
+							if (property.Name == "response")
+							{
+
+								var value = property.Value;
+								if (value.Type == JTokenType.Object)
+								{
+									var obj = (JObject)value;
+
+									if (obj.HasValues)
+									{
+										JToken countToken = null;
+										if (obj.TryGetValue("count", out countToken) && countToken.Type == JTokenType.Integer)
+										{
+											var itemsCount = countToken.Value<long>();
+
+											JToken usersToken = null;
+											if (obj.TryGetValue("messages", out usersToken) && usersToken.Type == JTokenType.Array)
+											{
+												var users = usersToken.ToObject<Message[]>();
+
+												var pUsers = users.Where((Message arg) => arg.UserId == peerId).ToArray();
+
+												return new TotalListOfMessages { Count = itemsCount, Items = pUsers };
+											}
+											else
+												Debug.WriteLine("No Users in JSON");
+										}
+										else
+											Debug.WriteLine("No Count in JSON");
+									}
+								}
+								else if (value.Type == JTokenType.Array)
+								{
+									var array = (JArray)value;
+
+									long userCount = 0;
+									var fMessages = new List<Message>();
+
+									foreach (var item in array)
+									{
+										if (userCount == 0 && item.Type == JTokenType.Integer )
+											userCount = item.Value<int>();
+										else if (item.Type == JTokenType.Object)
+										{
+											var message = item.ToObject<Message>();
+
+											if (message.UserId == peerId)
+												fMessages.Add(message);
+										}
+									}
+
+
+									return new TotalListOfMessages { Count = userCount, Items = fMessages.ToArray() };
+								}
+								else 
+									Debug.WriteLine("Format of json has changed!");
+							}
+							else
+								ThrowExceptionIfPropertyHasError(property);
+						}
+					}
+				}
+
+			}
+			return new TotalListOfMessages();
+		}
+
+		#endregion
+
 		#region Groups Methods
-
-
-
 
 		/// <summary>
 		/// Method for receiving information about group members.
@@ -755,7 +836,7 @@ namespace VKPeopleInviter
 				resultFields = string.Concat(resultFields, tempId);
 			}
 
-			string parameters = "group_id=" + groupId + "&sort=" + (sort == true ? "id_asc" : "id_desc")  +"&fields=" + resultFields +  "&offset=" + offset + "&count=" + count;
+			string parameters = "group_id=" + groupId + "&sort=" + (sort == true ? "id_asc" : "id_desc") + "&fields=" + resultFields + "&offset=" + offset + "&count=" + count;
 			string templatePart = GroupsMembersKey + parameters;
 			string template = templatePart + "&access_token=" + token;
 
@@ -767,54 +848,64 @@ namespace VKPeopleInviter
 				cacheMap[GroupsMembersKey] = tokenSource;
 
 				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
+				CancelOperation(GroupsMembersKey);
 				if (response.IsSuccessStatusCode)
 				{
 					var content = response.Content;
 
 					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
-					CancelOperation(GroupsMembersKey, false);
 
-					var totalList = JsonConvert.DeserializeObject<TotalListOfUsersWrapper>(jsonString);
+					var result = JObject.Parse(jsonString);
 
+					var resultObj = result.AsJEnumerable().AsEnumerable();
 
-
-					var index = jsonString.IndexOf('{');
-					jsonString = jsonString.Substring(index + 1);
-
-					index = jsonString.IndexOf('{');
-					if (index == -1)
+					foreach (JToken jToken in resultObj)
 					{
-						//TODO: analyze response and keep total amonunt of found users.
-						throw new UsersNotFoundException("Users were not found!");
-						//return new List<User>();
+
+						if (jToken.Type == JTokenType.Property)
+						{
+							var property = (JProperty)jToken;
+							if (property.Name == "response")
+							{
+
+								var value = property.Value;
+								if (value.Type == JTokenType.Object)
+								{
+									var obj = (JObject)value;
+
+									if (obj.HasValues)
+									{
+										JToken countToken = null;
+										if (obj.TryGetValue("count", out countToken) && countToken.Type == JTokenType.Integer)
+										{
+											var itemsCount = countToken.Value<long>();
+
+											JToken usersToken = null;
+											if (obj.TryGetValue("users", out usersToken) && usersToken.Type == JTokenType.Array)
+											{
+												var users = usersToken.ToObject<User[]>();
+
+												return new TotalListOfUsers { Count = itemsCount, Items = users };
+											}
+											else
+												Debug.WriteLine("No Users in JSON");
+										}
+										else 
+											Debug.WriteLine("No Count in JSON");
+									}
+								}
+								else
+									Debug.WriteLine("Format of json has changed!");
+							}
+							else
+								ThrowExceptionIfPropertyHasError(property);
+						}
 					}
-					jsonString = jsonString.Substring(index);
-					var length = jsonString.Length;
-
-
-					index = jsonString.IndexOf('{');
-					jsonString = jsonString.Substring(index + 1);
-
-					index = jsonString.IndexOf('{');
-					if (index == -1)
-					{
-						//TODO: analyze response and keep total amonunt of found users.
-						throw new UsersNotFoundException("Users were not found!");
-					//return new List<User>();
-					}
-					jsonString = jsonString.Substring(index);
-					var finalString = "{response:[" + jsonString;
-					finalString = finalString.Substring(0, finalString.Length - 1);
-					//TODO: why it doesn't work?
-					var responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(finalString);
-
-					totalList.totalListOfUsers.Users =  responseUsers.users;
-
-					return totalList.totalListOfUsers;
 				}
-				CancelOperation(GroupsMembersKey, false);
+				else
+					Debug.WriteLine("Response is failed " + response);
 			}
-			return new TotalListOfUsers();
+			return new TotalListOfUsers();;
 		}
 
 		#endregion
@@ -912,9 +1003,9 @@ namespace VKPeopleInviter
 
 	#endregion
 
-	public sealed class UsersNotFoundException : Exception
+	public sealed class ItemNotFoundException : Exception
 	{
-		public UsersNotFoundException(string message) : base(message) { }
+		public ItemNotFoundException(string message) : base(message) { }
 	}
 
 	public sealed partial class VKOperationException : Exception
@@ -944,3 +1035,5 @@ namespace VKPeopleInviter
 		};
 	}
 }
+
+

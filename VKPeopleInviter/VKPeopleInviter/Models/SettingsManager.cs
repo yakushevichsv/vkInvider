@@ -51,11 +51,16 @@ namespace VKPeopleInviter
 			}
 		}
 
+		public string InvitationTextHeader
+		{
+			get { return "Здравствуйте, от лица мастера по наращиванию ресниц"; }
+		}
+
 		string InvitationTextPrivate
 		{
 			get
 			{
-				return "Здравствуйте, от лица мастера по наращиванию ресниц \n и по шугарингу(депиляция сахаром),буду рад видеть Вас в её \n группе https://m.vk.com/beyesby \n Заранее спасибо Не сочтите за спам )";
+				return InvitationTextHeader + " \n и по шугарингу(депиляция сахаром),буду рад видеть Вас в её \n группе https://m.vk.com/beyesby \n Заранее спасибо Не сочтите за спам )";
 			}
 		}
 

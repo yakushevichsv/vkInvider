@@ -3,6 +3,8 @@ using System.ComponentModel;
 
 namespace VKPeopleInviter
 {
+	//TODO: Create base class which is not selectable...
+
 	public class MultipleItemSelectlon<T> : INotifyPropertyChanged
 	{
 		bool m_Selected;

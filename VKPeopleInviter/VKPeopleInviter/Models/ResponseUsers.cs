@@ -3,28 +3,34 @@
 namespace VKPeopleInviter
 {
     [JsonObject]
-    public class ResponseUsers
+    public class ResponseItems<T>
     {
         [JsonProperty("response")]
-        public User[] users { get; set; }
+        public T[] Items { get; set; }
     }
 
 	[JsonObject]
-	public class TotalListOfUsers
-	{
+	public class ListOfItems<T>
+	{	
 		[JsonProperty("count")]
-		public long Count { get; set; }
+		public long Count { get; set;}
 
 		[JsonProperty("items")]
-		public User[] Users { get; set;}
+		public T[] Items { get; set; }
 	}
 
 	[JsonObject]
-	public class TotalListOfUsersWrapper
+	public class ListOfItemsWrapper<T>
 	{
 		[JsonProperty("response")]
-		public TotalListOfUsers totalListOfUsers { get; set;}
+		public ListOfItems<T> List { get; set; }
 	}
 
+	public sealed class ResponseUsers : ResponseItems<User> { } 
+	public sealed class TotalListOfUsers : ListOfItems<User> { }
+	public sealed class TotalListOfUsersWrapper : ListOfItemsWrapper<User> {}
 
+	public sealed class ResponseMessages : ResponseItems<Message> { }
+	public class TotalListOfMessages : ListOfItems<Message> {} 
+	public class TotalListOfMessagesWrapper : ListOfItemsWrapper<Message> {}
 }

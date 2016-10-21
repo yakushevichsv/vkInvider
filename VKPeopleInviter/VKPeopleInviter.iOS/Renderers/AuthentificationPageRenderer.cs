@@ -135,7 +135,7 @@ namespace VKPeopleInviter.iOS
 					// Deserialize the data and store it in the account store
 					// The users email address will be used to identify data in SimpleDB
 					ResponseUsers responseUsers = JsonConvert.DeserializeObject<ResponseUsers>(response.GetResponseText());
-					User user = responseUsers.users.First();
+					User user = responseUsers.Items.First();
 					if (user != null)
 					{
 						user.Token = token;

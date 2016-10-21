@@ -21,12 +21,12 @@ namespace VKPeopleInviter
 			try
 			{
 				Debug.WriteLine("DetectFriendshipStatusWithUsers");
-				var result = await vkManager.DetectFriendshipStatusWithUsers(new string[] { id }); //TODO: perform request in a group..
+				var result = await vkManager.DetectFriendshipStatusWithUsers(new long[] { id }); //TODO: perform request in a group..
 				Debug.WriteLine("DetectFriendshipStatusWithUsers finished with result " + result);
 
 				foreach (var keyPair in result)
 				{
-					var fWrapper =  source.Find((item) => item.Item.Id == keyPair.Key);
+					var fWrapper =  source.Find((item) => item.Item.Id.ToString() == keyPair.Key);
 					if (fWrapper == null)
 						continue;
 					Debug.WriteLine("DetectFriendshipStatusWithUsers Detected status for item " + fWrapper.Item + "\n Status " + keyPair.Value);
@@ -53,7 +53,7 @@ namespace VKPeopleInviter
 		{
 			var ItemWrapper = (MultipleItemSelectlon<User>)e.Item;
 			var id = ItemWrapper.Item.Id;
-			vkManager.CancelFriendshipDetection(new string[] { id });
+			vkManager.CancelFriendshipDetection(new long[] { id });
 		}
 
 		void Handle_SelectUnSelectAll(object sender, System.EventArgs e)
@@ -179,12 +179,12 @@ namespace VKPeopleInviter
 
 					bool selected = !LeftNavButton.Text.StartsWith("Select",StringComparison.OrdinalIgnoreCase);
 
-					foreach (var currentUser in result.Users)
+					foreach (var currentUser in result.Items)
 						finalResult.Add(new MultipleItemSelectlon<User>() { Selected = selected, Item = currentUser });
 
 					PeopleListView.ItemsSource = finalResult;
 				}
-				catch (UsersNotFoundException error)
+				catch (ItemNotFoundException error)
 				{
 					var source = (List<MultipleItemSelectlon<User>>)PeopleListView.ItemsSource;
 					if (source == null || source.Count == 0)
@@ -218,7 +218,7 @@ namespace VKPeopleInviter
 			try
 			{
 				Debug.WriteLine("Handle_SendClicked");
-				var ids = GetSelection().Where(item => item.CanWritePrivateMessage).Select(item => item.Id).ToArray();
+				var ids = GetSelection().Where(item => item.CanWritePrivateMessage).Select(item => item.Id).ToList();
 				var friendRequestIds = GetSelection().Where(item => !item.CanWritePrivateMessage).Select(item => item.Id).ToArray();
 
 				/*if (ids.Length == 0){
@@ -226,17 +226,45 @@ namespace VKPeopleInviter
 					return;
 				}*/
 				var settingsManager = new SettingsManager(Application.Current);
-				await vkManager.SendMessageToUsers(settingsManager.InvitationText, ids);
-				//analayze results of sending...
-				await DisplayAlert("Success", "All users were notified", "OK");
-				Debug.WriteLine("Success", "All users were notified");
+				if (ids.Count != 0)
+				{
+					var itemsToDispose = new List<long>();
+
+					foreach (var id in ids) {
+						var result = await vkManager.SearchMessages(settingsManager.InvitationTextHeader, id);
+
+						var lastMessage = (result.Items != null && result.Items.Length != 0) ? result.Items.Last() : null;
+
+						if (lastMessage != null && (lastMessage.IsDeleted || lastMessage.IsRead || lastMessage.UnixTime.Subtract(DateTime.UtcNow).TotalDays < 30))
+						{
+							itemsToDispose.Add(id);
+							continue;
+						}
+					}
+
+					if (itemsToDispose.Count != 0)
+						ids.RemoveAll((obj) => itemsToDispose.Contains(obj));
+				}
+
+				if (ids.Count != 0)
+				{
+					Debug.WriteLine("Sending invitation");
+					await vkManager.SendMessageToUsers(settingsManager.InvitationText, ids.ToArray());
+					//analayze results of sending...
+					await DisplayAlert("Success", "All users (" + ids.Count + ") were notified", "OK");
+					Debug.WriteLine("Success", "All users were notified");
+				}
+
 
 				if (friendRequestIds.Length != 0)
 				{
+					Debug.WriteLine("Resending friend request");
 					foreach (var friend in friendRequestIds)
 					{
 						var friendInvitation = await vkManager.CreateOrApproveFriendRequest(friend);
 					}
+					Debug.WriteLine("All requests were resend");
+					await DisplayAlert("Success", "All users were invited", "OK");
 				}
 			}
 			catch (VKOperationException error)
@@ -266,7 +294,7 @@ namespace VKPeopleInviter
 					newItem.Item = arrayElemenet;
 					result.Add(newItem);
 				}
-				var page = new PeopleInvitationStatusPage(result.ToArray(), Constants.GroupId.ToString());
+				var page = new PeopleInvitationStatusPage(result.ToArray(), Constants.GroupId);
 				Navigation.PushAsync(page);
 			}
 		}
