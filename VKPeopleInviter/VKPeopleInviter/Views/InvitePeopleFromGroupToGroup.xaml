@@ -5,11 +5,8 @@
 	<ToolbarItem Name="Next" x:Name="RightNavButton" Clicked="HandleNextToolBarClicked"/>
 </ContentPage.ToolbarItems>
 	<ContentPage.Content>
-		<RelativeLayout>
-		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" 
-					RelativeLayout.HeightConstraint="{ConstraintExpression Type=RelativeToParent, Property=Height, Factor=1}" 
-					RelativeLayout.WidthConstraint="{ConstraintExpression Type=RelativeToParent, Property=Width, Factor=1}"
-					>
+		<c:PopupLayout x:Name= "containingLayout">
+		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" >
 	<ListView IsPullToRefreshEnabled="True" Refreshing="Handle_Refreshing" ItemSelected="Handle_ItemSelected" x:Name="PeopleListView" ItemAppearing="Handle_ItemAppearing" ItemDisappearing="Handle_ItemDisappearing">
       <ListView.ItemTemplate>
         <DataTemplate>
@@ -20,8 +17,6 @@
     </ListView>
 			<Button Text="Send message" Clicked="Handle_SendClicked" x:Name="SendButton" IsVisible="false"/>
   </StackLayout>
-			<ActivityIndicator RelativeLayout.YConstraint="{ConstraintExpression Type=RelativeToParent, Property=Height, Factor=0.5}" 
-					RelativeLayout.XConstraint="{ConstraintExpression Type=RelativeToParent, Property=Width, Factor=0.5}" IsVisible="false" Color ="Black"  x:Name ="ActivityIndicator"/>
-			</RelativeLayout>
+			</c:PopupLayout>
 	</ContentPage.Content>
 </ContentPage>

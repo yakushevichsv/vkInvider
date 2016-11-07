@@ -118,20 +118,18 @@ namespace VKPeopleInviter
 
 		private void RunActivityIndicator()
 		{
-			if (!ActivityIndicator.IsRunning && !PeopleListView.IsRefreshing)
+			var label = new Label()
 			{
-				ActivityIndicator.IsVisible = true;
-				ActivityIndicator.IsRunning = true;
-			}
+				HeightRequest = 100,
+				WidthRequest = 200
+			};
+			label.Text = "Test";
+			containingLayout.ShowPopup(label);
 		}
 
 		private void StopActivityIndicator()
 		{
-			if (ActivityIndicator.IsRunning)
-			{
-				ActivityIndicator.IsVisible = false;
-				ActivityIndicator.IsRunning = false;
-			}
+			containingLayout.DismissPopup();
 		}
 
 		private void GetChunkOfMembersUsingRealData() {
@@ -208,7 +206,6 @@ namespace VKPeopleInviter
 				{
 					if (PeopleListView.IsRefreshing)
 						PeopleListView.EndRefresh();
-					StopActivityIndicator();
 					Debug.WriteLine("Search Private Finished");
 				}
 		}
@@ -230,7 +227,8 @@ namespace VKPeopleInviter
 				{
 					var itemsToDispose = new List<long>();
 
-					foreach (var id in ids) {
+					foreach (var id in ids)
+					{
 						var result = await vkManager.SearchMessages(settingsManager.InvitationTextHeader, id);
 
 						var lastMessage = (result.Items != null && result.Items.Length != 0) ? result.Items.Last() : null;
@@ -248,6 +246,7 @@ namespace VKPeopleInviter
 
 				if (ids.Count != 0)
 				{
+					RunActivityIndicator();
 					Debug.WriteLine("Sending invitation");
 					await vkManager.SendMessageToUsers(settingsManager.InvitationText, ids.ToArray());
 					//analayze results of sending...
@@ -258,6 +257,7 @@ namespace VKPeopleInviter
 
 				if (friendRequestIds.Length != 0)
 				{
+					RunActivityIndicator();
 					Debug.WriteLine("Resending friend request");
 					foreach (var friend in friendRequestIds)
 					{
@@ -275,6 +275,10 @@ namespace VKPeopleInviter
 			catch (Exception error)
 			{
 				Debug.WriteLine("Error" + error);
+			}
+			finally
+			{
+				StopActivityIndicator();
 			}
 		}
 
