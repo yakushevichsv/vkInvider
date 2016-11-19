@@ -39,10 +39,18 @@ namespace VKPeopleInviter
 		{
 			try
 			{
-
+				Title = userProfile.user.FirstName ?? userProfile.user.LastName;
 				Debug.WriteLine("Getting current user"); 
 				var users = await vkManager.GetUsers(new long[] { userProfile.user.Id });
 				this.serverUser = users.Items[users.Items.Length - 1];
+
+				//TODO: refactor this using MVVM, bindings....
+				var imageUri = this.serverUser.ImageUri;
+				if (imageUri != null)
+					this.imagePicture.Source = new UriImageSource() {Uri = new Uri(imageUri)};
+				else
+					this.imagePicture.IsVisible = false;
+				this.lblFullName.Text = userProfile.user.FullName ?? this.serverUser.FullName;  
 				Debug.WriteLine("Current user received!");
 			}
 			catch (Exception exp)
@@ -55,9 +63,7 @@ namespace VKPeopleInviter
 				{
 					//containingLayout.ShowPopupFromTop( new 
 					RunActivityIndicator("No Internet ");
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 					DelayActionAsync(4, StopActivityIndicator);
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 				}
 			}
 		}
@@ -90,10 +96,10 @@ namespace VKPeopleInviter
 		#endregion
 
 
-		private async Task DelayActionAsync(int delayInSeconds, Action action)
+		void DelayActionAsync(int delayInSeconds, Action action)
 		{
-			await Task.Delay(delayInSeconds * 1000);
-
+			var t =  Task.Delay(delayInSeconds * 1000);
+			Task.WaitAll(new Task[] { t });
 			action();
 		}
 
