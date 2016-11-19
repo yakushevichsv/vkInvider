@@ -121,9 +121,13 @@ namespace VKPeopleInviter
 			var label = new Label()
 			{
 				HeightRequest = 100,
-				WidthRequest = 200
+				WidthRequest = 200,
+				HorizontalTextAlignment = TextAlignment.Center,
+				VerticalTextAlignment = TextAlignment.Center,
+				TextColor = Color.White,
+				BackgroundColor = Color.Blue
 			};
-			label.Text = "Test";
+			label.Text = "Performing Action";
 			containingLayout.ShowPopup(label);
 		}
 
@@ -218,6 +222,8 @@ namespace VKPeopleInviter
 				var ids = GetSelection().Where(item => item.CanWritePrivateMessage).Select(item => item.Id).ToList();
 				var friendRequestIds = GetSelection().Where(item => !item.CanWritePrivateMessage).Select(item => item.Id).ToArray();
 
+				RunActivityIndicator();
+
 				/*if (ids.Length == 0){
 					await DisplayAlert("Impossible", "All items acess only private messages", "OK");                                        
 					return;
@@ -246,7 +252,6 @@ namespace VKPeopleInviter
 
 				if (ids.Count != 0)
 				{
-					RunActivityIndicator();
 					Debug.WriteLine("Sending invitation");
 					await vkManager.SendMessageToUsers(settingsManager.InvitationText, ids.ToArray());
 					//analayze results of sending...
@@ -257,7 +262,6 @@ namespace VKPeopleInviter
 
 				if (friendRequestIds.Length != 0)
 				{
-					RunActivityIndicator();
 					Debug.WriteLine("Resending friend request");
 					foreach (var friend in friendRequestIds)
 					{
@@ -266,19 +270,23 @@ namespace VKPeopleInviter
 					Debug.WriteLine("All requests were resend");
 					await DisplayAlert("Success", "All users were invited", "OK");
 				}
+				StopActivityIndicator();
 			}
 			catch (VKOperationException error)
 			{
+				//StopActivityIndicator();
 				Debug.WriteLine("Error" + error);
-				await DisplayAlert("Error", error.Message, "Cancel");
+				var lbl = containingLayout.LatestChildren;
+				if (lbl != null)
+				{
+					((Label)lbl).Text = "Error " + "/n" + error.Message;
+				}
+				//await DisplayAlert("Error", error.Message, "Cancel");
 			}
 			catch (Exception error)
 			{
-				Debug.WriteLine("Error" + error);
-			}
-			finally
-			{
 				StopActivityIndicator();
+				Debug.WriteLine("Error" + error);
 			}
 		}
 

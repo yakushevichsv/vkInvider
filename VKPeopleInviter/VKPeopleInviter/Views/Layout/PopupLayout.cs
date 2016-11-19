@@ -48,10 +48,17 @@ namespace VKPeopleInviter.Controls
 		{
 			this.ShowPopup(
 				popupView,
-				Constraint.RelativeToParent(p => (this.Width - this.popup.WidthRequest) / 2),
-				Constraint.RelativeToParent(p => (this.Height - this.popup.HeightRequest) / 2)
+				Constraint.RelativeToParent(p => (this.Width - popupView.WidthRequest) / 2),
+				Constraint.RelativeToParent(p => (this.Height - popupView.HeightRequest) / 2)
 				);
 
+		}
+
+		public void ShowPopupFromTop(View popupView)
+		{
+			this.ShowPopup(popupView,
+			               Constraint.RelativeToParent((arg) => (this.X)),
+			               Constraint.RelativeToParent((arg) => (this.Y)));
 		}
 
 		private void ShowPopup(View popupView, Constraint xConstraint, Constraint yConstraint, Constraint widthConstraint = null, Constraint heightConstraint = null)
@@ -79,6 +86,16 @@ namespace VKPeopleInviter.Controls
 			if (content != null)
 			{
 				content.InputTransparent = false;
+			}
+		}
+
+		public View LatestChildren
+		{
+			get
+			{
+				if (rLayout.Children.Count == 0)
+					return null;
+				return rLayout.Children[rLayout.Children.Count - 1];
 			}
 		}
 

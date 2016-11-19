@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading.Tasks;
 using Xamarin.Forms;
@@ -7,7 +8,20 @@ namespace VKPeopleInviter
 {
     public class App : Application
     {
-        public static string AppName { get { return "VKPeopleInviter"; } }
+		void Tabbed_CurrentPageChanged(object sender, EventArgs e)
+		{
+			var tabbed = MainPage as TabbedPage;
+			if (tabbed != null)
+			{
+				if (tabbed.CurrentPage.Title == "Profile")
+				{
+					var profilePage = (tabbed.CurrentPage as NavigationPage).CurrentPage as UserProfilePage;
+					profilePage.userProfile = new UserProfile(User);
+				}
+			}
+		}
+
+		public static string AppName { get { return "VKPeopleInviter"; } }
 
         //public static TodoItemManager TodoManager { get; private set; }
 
@@ -33,10 +47,22 @@ namespace VKPeopleInviter
         {
             get
             {
-                return new Action(() => {
-					Current.MainPage.Navigation.PopModalAsync();
-                    if (IsLoggedIn)
+				Contract.Ensures(Contract.Result<Action>() != null);
+				return new Action(() => {
+					//Current.MainPage.Navigation.PopModalAsync();
+					NavPage.Navigation.PopModalAsync(false);
+					if (IsLoggedIn)
 					{
+						var tabbed = Current.MainPage as TabbedPage;
+						if (tabbed != null && tabbed.Children.Count != 3)
+						{
+							var profilePage = new UserProfilePage();
+							var profile = new NavigationPage(profilePage);
+							profile.Title = "Profile";
+							tabbed.Children.Add(profile);
+							tabbed.CurrentPageChanged += (Current as App).Tabbed_CurrentPageChanged;
+						}
+						//Current.MainPage.Navigation.PushModalAsync(new ItemsSelectorPage());
 						NavPage.PushAsync(new ItemsSelectorPage());
 					}
                 });

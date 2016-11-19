@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Net;
 using Newtonsoft.Json;
-
 
 namespace VKPeopleInviter
 {
@@ -32,38 +33,38 @@ namespace VKPeopleInviter
 			}
 		}
 
-		[JsonProperty ("uid")]
+		[JsonProperty("uid")]
 		public long Id { get; set; }
 
-		[JsonProperty ("first_name")]
+		[JsonProperty("first_name")]
 		public string FirstName { get; set; }
 
-		[JsonProperty ("last_name")]
+		[JsonProperty("last_name")]
 		public string LastName { get; set; }
-     
-		[JsonProperty ("photo_100", DefaultValueHandling = DefaultValueHandling.Ignore)]
+
+		[JsonProperty("photo_100", DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string Picture100 { get; set; }
 
 		[JsonProperty("photo_200", DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string Picture200 { get; set; }
 
 		[JsonProperty("photo_400", DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string Picture400 { get; set;}
+		public string Picture400 { get; set; }
 
 		[JsonProperty("photo_50", DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string Picture50 { get; set;}
+		public string Picture50 { get; set; }
 
 		[JsonProperty("photo_max", DefaultValueHandling = DefaultValueHandling.Ignore)]
-		public string PictureMax { get; set;}
+		public string PictureMax { get; set; }
 
 		[JsonProperty("photo_max_orig", DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string PictureMaxOrigin { get; set; }
 
-		[JsonProperty ("sex", DefaultValueHandling = DefaultValueHandling.Ignore)]
+		[JsonProperty("sex", DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public string Gender { get; set; }
 
-		[JsonProperty("can_write_private_message")]
-		public bool CanWritePrivateMessage { get; set;}
+		[JsonProperty("can_write_private_message", DefaultValueHandling = DefaultValueHandling.Ignore )]
+		public bool CanWritePrivateMessage { get; set; }
 
 		[JsonIgnore]
 		public string ImageUri
@@ -84,9 +85,9 @@ namespace VKPeopleInviter
 					result = PictureMaxOrigin;
 				else if (!string.IsNullOrEmpty(Picture50))
 					result = Picture50;
-					 
 
-				return !string.IsNullOrEmpty(result)  ? result : null;
+
+				return !string.IsNullOrEmpty(result) ? result : null;
 			}
 		}
 		[JsonIgnore]
@@ -99,14 +100,23 @@ namespace VKPeopleInviter
 		}
 
 		[JsonIgnore]
-		public string Token { get; set;}
+		public string Token { get; set; }
 
 		[JsonIgnore]
-		public DateTime ExpirationDate { get; set;}
+		public DateTime ExpirationDate { get; set; }
 
+		[JsonProperty("city",DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public long CityId;
+
+		[JsonProperty("country", DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public long CountryId;
+
+		[JsonProperty("home_town", DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public string HomeTown;
 	}
 }
 
+//TODO: place into separate file
 public static class ArrayOfStringsExtension
 {
 	public static string FirstNonNullAndNonEmptyString(this string[] items)
@@ -119,5 +129,57 @@ public static class ArrayOfStringsExtension
 				return item;
 
 		return null;
+	}
+
+	public static string CommaJointItems(this string[] items)
+	{
+		string result = "";
+
+		foreach (var item in items)
+		{
+			if (result.Length != 0)
+				result = string.Concat(result, ",");
+			result = string.Concat(result, item);
+		}
+		return result;
+	}
+}
+
+public static class ArrayOfLongExtension
+{
+	public static string CommaJointItems(this long[] items)
+	{
+		string result = "";
+
+		foreach (var item in items)
+		{
+			if (result.Length != 0)
+				result = string.Concat(result, ",");
+			result = string.Concat(result, item);
+		}
+		return result;
+	}
+}
+
+//TODO: Place into separate file...
+public static class ExceptionIsNetwork
+{
+	public static bool IsNetworkException(this Exception exception)
+	{
+		var webException = exception as System.Net.WebException;
+		Debug.WriteLine("Type " + webException.GetType());
+		Debug.WriteLine("Status " + webException.Status);
+
+		var status = webException.Status.ToString() ;
+
+		if (webException != null)
+		{
+			//TODO: figure out why there is no status....
+			if (WebExceptionStatus.ConnectFailure == webException.Status || status == "NameResolutionFailure")
+				return true;
+
+		}
+
+		return false;
 	}
 }

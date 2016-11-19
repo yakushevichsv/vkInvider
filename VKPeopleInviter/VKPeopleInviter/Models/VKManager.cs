@@ -59,6 +59,11 @@ namespace VKPeopleInviter
 			return BasicAPIURL + jointMethodName + "?";
 		}
 
+		string UsersGetAPIKey
+		{
+			get { return FormatVKMethodKey("users", "get"); }
+		}
+
 		string UsersSearchAPIKey
 		{
 			get { return FormatVKMethodKey("users", "search"); }
@@ -773,7 +778,7 @@ namespace VKPeopleInviter
 
 									foreach (var item in array)
 									{
-										if (userCount == 0 && item.Type == JTokenType.Integer )
+										if (userCount == 0 && item.Type == JTokenType.Integer)
 											userCount = item.Value<int>();
 										else if (item.Type == JTokenType.Object)
 										{
@@ -787,7 +792,7 @@ namespace VKPeopleInviter
 
 									return new TotalListOfMessages { Count = userCount, Items = fMessages.ToArray() };
 								}
-								else 
+								else
 									Debug.WriteLine("Format of json has changed!");
 							}
 							else
@@ -798,6 +803,103 @@ namespace VKPeopleInviter
 
 			}
 			return new TotalListOfMessages();
+		}
+
+		#endregion
+
+		#region Users Methods 
+
+		public async Task<TotalListOfUsers> GetUsers(long[] userIds, string[] fields = null)
+		{
+			string token = App.User.Token;
+
+			List<string> eFields = null;
+			var key = UsersGetAPIKey;
+
+			if (fields == null || fields.Length == 0)
+			{
+				eFields = new List<string>() { "first_name", "last_name","city","country","home_town"};
+				eFields.AddRange(User.Pictures);
+			}
+			else
+				eFields = new List<string>(fields);
+
+			string parameters = "user_ids=" + userIds.CommaJointItems()  + "&fields=" + eFields.ToArray().CommaJointItems() ;
+			string templatePart = key + parameters;
+			string template = templatePart + "&access_token=" + token;
+
+			CancelOperation(templatePart);
+
+			using (var client = new HttpClient())
+			{
+				CancellationTokenSource tokenSource = new CancellationTokenSource();
+				cacheMap[templatePart] = tokenSource;
+
+				var response = await client.GetAsync(template, tokenSource.Token).ConfigureAwait(false);
+				CancelOperation(templatePart);
+				if (response.IsSuccessStatusCode)
+				{
+					var content = response.Content;
+
+					string jsonString = await content.ReadAsStringAsync().ConfigureAwait(false);
+
+					var result = JObject.Parse(jsonString);
+
+					var resultObj = result.AsJEnumerable().AsEnumerable();
+
+					foreach (JToken jToken in resultObj)
+					{
+
+						if (jToken.Type == JTokenType.Property)
+						{
+							var property = (JProperty)jToken;
+							if (property.Name == "response")
+							{
+
+								var value = property.Value;
+								if (value.Type == JTokenType.Object)
+								{
+									var obj = (JObject)value;
+
+									if (obj.HasValues)
+									{
+										JToken countToken = null;
+										if (obj.TryGetValue("count", out countToken) && countToken.Type == JTokenType.Integer)
+										{
+											var itemsCount = countToken.Value<long>();
+
+											JToken usersToken = null;
+											if (obj.TryGetValue("users", out usersToken) && usersToken.Type == JTokenType.Array)
+											{
+												var users = usersToken.ToObject<User[]>();
+
+												return new TotalListOfUsers { Count = itemsCount, Items = users };
+											}
+											else
+												Debug.WriteLine("No Users in JSON");
+										}
+										else
+											Debug.WriteLine("No Count in JSON");
+									}
+								}
+								else if (value.Type == JTokenType.Array)
+								{
+									var users = value.ToObject<User[]>();
+									return new TotalListOfUsers { Count = users.Length, Items = users };
+								}
+								else
+									Debug.WriteLine("Not supported JSON");
+									
+							}
+							else
+								ThrowExceptionIfPropertyHasError(property);
+						}
+					}
+				}
+				else
+					Debug.WriteLine("Response is failed " + response);
+			}
+			return new TotalListOfUsers(); ;
 		}
 
 		#endregion
@@ -1003,6 +1105,8 @@ namespace VKPeopleInviter
 
 	#endregion
 
+	#region Custom Exceptions
+
 	public sealed class ItemNotFoundException : Exception
 	{
 		public ItemNotFoundException(string message) : base(message) { }
@@ -1034,6 +1138,8 @@ namespace VKPeopleInviter
 			AccessDenied = 15
 		};
 	}
+
+	#endregion
 }
 
 
