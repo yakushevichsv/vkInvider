@@ -11,7 +11,7 @@ namespace VKPeopleInviter
 			Content = new StackLayout
 			{
 				Children = {
-					new Label { Text = "Hello ContentPage" }
+					new Label { Text = "Hello ContentPage" , HorizontalOptions = LayoutOptions.Center, VerticalOptions = LayoutOptions.Center }
 				}
 			};
 		}

@@ -2,7 +2,7 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="VKPeopleInviter.UserProfilePage" xmlns:c="clr-namespace:VKPeopleInviter.Controls"	Title="User Profile">
 			<ContentPage.Content>
 		<c:PopupLayout x:Name= "containingLayout">
-		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" VerticalOptions = "FillAndExpand" Padding="0,20,0,0">
+		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" VerticalOptions = "FillAndExpand" Padding="0,0,0,0">
 				<Image x:Name="imagePicture" HorizontalOptions="Center" VerticalOptions = "Center"/>
 				<Label x:Name="lblFullName" HorizontalOptions="Center" VerticalOptions = "Fill"/>
 					</StackLayout>

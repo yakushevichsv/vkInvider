@@ -80,7 +80,7 @@ namespace VKPeopleInviter
 
 			tabbedPage.Children.Add(navPage);
 
-			var settings = new SettingsPage();
+			var settings = new NavigationPage(new SettingsPage());
 			settings.Title = "Settings";
 
 			tabbedPage.Children.Add(settings);

@@ -47,7 +47,12 @@ namespace VKPeopleInviter
 				//TODO: refactor this using MVVM, bindings....
 				var imageUri = this.serverUser.ImageUri;
 				if (imageUri != null)
-					this.imagePicture.Source = new UriImageSource() {Uri = new Uri(imageUri)};
+				{
+					imagePicture.Source = new UriImageSource {Uri = new Uri(imageUri) };
+					await Task.WhenAll(imagePicture.TranslateTo(0, 20, 150, Easing.Linear),
+										   lblFullName.TranslateTo(0, 20, 150, Easing.Linear));
+						
+				}
 				else
 					this.imagePicture.IsVisible = false;
 				this.lblFullName.Text = userProfile.user.FullName ?? this.serverUser.FullName;  
